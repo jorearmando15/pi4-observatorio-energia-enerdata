@@ -7,7 +7,7 @@
 | Nombre | Usuario GitHub | Rol |
 |---|---|---|
 | | | Líder técnico / Data Engineer |
-| | | Data Quality Analyst |
+| Yusep Ruiz | @yusepruiz | Data Quality Analyst |
 | | | Analytics Engineer |
 | | | BI Analyst / Storyteller |
 

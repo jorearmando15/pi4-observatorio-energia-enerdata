@@ -7,8 +7,13 @@
 | Nombre | Usuario GitHub | Rol |
 |---|---|---|
 | | | Líder técnico / Data Engineer |
+<<<<<<< HEAD
 | Yusep Ruiz | @yusepruiz | Data Quality Analyst |
 | | | Analytics Engineer |
+=======
+| | | Data Quality Analyst |
+| Lina Seguro | LinaSeguro | Analytics Engineer |
+>>>>>>> origin/rama-LinaSeguro-AnalyticsEngineer
 | | | BI Analyst / Storyteller |
 
 ## 🎯 Objetivo

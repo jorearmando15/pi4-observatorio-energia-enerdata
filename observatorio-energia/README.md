@@ -8,7 +8,7 @@
 |---|---|---|
 | | | Líder técnico / Data Engineer |
 | | | Data Quality Analyst |
-| Lina Seguro | LinaSeguro | Analytics Engineer |
+| Lina Johana Seguro | LinaSeguro | Analytics Engineer |
 | | | BI Analyst / Storyteller |
 
 ## 🎯 Objetivo

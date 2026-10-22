@@ -6,7 +6,7 @@
 
 | Nombre | Usuario GitHub | Rol |
 |---|---|---|
-| | | Líder técnico / Data Engineer |
+| Jorge Rodriguez | @jorgerodriguezdev | Líder técnico / Data Engineer |
 <<<<<<< HEAD
 | Yusep Ruiz | @yusepruiz | Data Quality Analyst |
 | | | Analytics Engineer |

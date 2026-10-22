@@ -2,7 +2,7 @@
 
 > Proyecto Integrado IV – Integración de Información · IU Digital de Antioquia · 2026-2
 
-## 👥 Integrantes
+## 👥 Integrante
 
 | Nombre | Usuario GitHub | Rol |
 |---|---|---|

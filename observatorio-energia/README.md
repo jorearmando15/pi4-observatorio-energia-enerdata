@@ -55,6 +55,16 @@ Para verificar la lectura y conservación de valores mediante pruebas automatiza
 python -m unittest discover -s tests -v
 ```
 
+### Generar muestras CSV
+
+Después de ejecutar el pipeline, genera un CSV con hasta 200 filas por cada Parquet de bronce:
+
+```powershell
+python -m src.muestras
+```
+
+Los archivos se guardan en `data/sample/`, conservan los encabezados y columnas de linaje y no reemplazan los Parquet originales. Revisa el contenido y confirma que su publicación esté autorizada antes de subirlos, especialmente los datos de ventas internas de EnerAndes.
+
 ## 🏗️ Arquitectura
 
 ```

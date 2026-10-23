@@ -65,15 +65,44 @@ def extraer_metrica(metrica: str, entidad: str, periodo: str, nombre: str, forza
     # y guardar_bronce() la guarda en data/bronze/<nombre>.parquet
     guardar_bronce(pd.DataFrame(filas), nombre, fuente="XM", origen=f"{url} MetricId={metrica}")
 
+def aplanar_listado(respuesta: dict) -> list:
+    """Aplana la respuesta de un catalogo: Items -> ListEntities -> Values."""
+    filas = []
+    for item in respuesta.get("Items", []):
+        for entidad in item.get("ListEntities", []):
+            fila = {}
+            if "Date" in item:
+                fila["Date"] = item["Date"]
+            if "Id" in entidad:
+                fila["Id"] = entidad["Id"]
+            fila.update(entidad.get("Values", {}))
+            filas.append(fila)
+    return filas
+
+
+def extraer_listado(metrica: str, entidad: str, nombre: str, forzar: bool) -> None:
+    """Descarga un catalogo de XM (endpoint lists): una sola peticion, sin ventanas."""
+    if ya_existe(nombre, forzar):
+        return
+    url = config.XM_URL.format(periodo="lists")
+    cuerpo = {"MetricId": metrica, "Entity": entidad,
+              "StartDate": str(config.FECHA_FIN), "EndDate": str(config.FECHA_FIN), "Filter": []}
+    respuesta = http_json("POST", url, json=cuerpo)
+    filas = aplanar_listado(respuesta)
+    log(f"   {metrica}: {len(filas)} filas")
+    guardar_bronce(pd.DataFrame(filas), nombre, fuente="XM", origen=f"{url} MetricId={metrica}")
+
 
 def extraer(forzar: bool = False) -> None:
-    """Descarga las 3 metricas de XM definidas en config.XM_METRICAS."""
-    # forzar: bool = False -> si no se indica nada, forzar vale False (no repetir descargas).
+    """Descarga las metricas de XM (config.XM_METRICAS) y los catalogos (config.XM_LISTADOS)."""    # forzar: bool = False -> si no se indica nada, forzar vale False (no repetir descargas).
     log("XM - API REST del mercado electrico")
     # Cada elemento de XM_METRICAS es una tupla de 4 valores;
     # el for la desempaca en 4 variables a la vez.
     for metrica, entidad, periodo, nombre in config.XM_METRICAS:
-        extraer_metrica(metrica, entidad, periodo, nombre, forzar)
+        extraer_metrica(metrica, entidad, periodo, nombre, forzar),
+    for metrica, entidad, nombre in config.XM_LISTADOS:
+        extraer_listado(metrica, entidad, nombre, forzar)
+
 
 
 # ---------------------------------------------------------------------------

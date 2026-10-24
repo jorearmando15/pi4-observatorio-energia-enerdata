@@ -46,6 +46,33 @@ python -m src.consultar         # consultas SQL de BI con DuckDB
 
 Para volver a descargar todo: `python -m src.pipeline --forzar`. El rango de fechas se cambia en `src/config.py`.
 
+### NOAA y ventas de EnerAndes
+
+El pipeline extrae el índice ONI de NOAA desde su archivo de texto y las hojas del Excel `data/insumos/ventas_enerandes_2023_2026.xlsx`. Cada hoja de ventas se guarda por separado. En la capa bronce se conservan sus filas y valores de origen; solo se asignan nombres de columna para las hojas de Excel y se agregan los campos de linaje `_fuente`, `_origen` y `_extraido_en`. La limpieza y normalización corresponde a capas posteriores.
+
+El Excel de EnerAndes es un insumo local y no se descarga automáticamente. Debe obtenerse por un canal autorizado. Para ejecutar solo las extracciones de estas dos fuentes:
+
+```powershell
+python -m src.extract.noaa
+python -m src.extract.enerandes
+```
+
+Para verificar la lectura y conservación de valores mediante pruebas automatizadas:
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+### Generar muestras CSV
+
+Después de ejecutar el pipeline, genera un CSV con hasta 200 filas por cada Parquet de bronce:
+
+```powershell
+python -m src.muestras
+```
+
+Los archivos se guardan en `data/sample/`, conservan los encabezados y columnas de linaje y no reemplazan los Parquet originales. Revisa el contenido y confirma que su publicación esté autorizada antes de subirlos, especialmente los datos de ventas internas de EnerAndes.
+
 ## 🏗️ Arquitectura
 
 ```

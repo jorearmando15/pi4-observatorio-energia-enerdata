@@ -14,7 +14,7 @@ import time     # time.time(): segundos actuales, para medir cuanto tarda
 import pandas as pd     # pandas: para abrir cada Parquet y contar filas y columnas
 
 from src import config                              # configuracion central
-from src.extract import enerandes, ideam, noaa, xm  # los 4 extractores (src/extract/*.py)
+from src.extract import enerandes, ideam, noaa, xm, trm # los 4 extractores (src/extract/*.py)
 from src.utils import log                           # mensajes con hora
 
 
@@ -33,7 +33,7 @@ def main() -> None:
     forzar = "--forzar" in sys.argv       # True si el comando trae --forzar
     inicio = time.time()                  # hora de inicio, para medir
     log(f"Pipeline bronce | rango {config.FECHA_INICIO} a {config.FECHA_FIN} | forzar={forzar}")
-    for extractor in (xm, ideam, noaa, enerandes):   # los 4 extractores, EN ORDEN
+    for extractor in (xm, ideam, noaa, enerandes, trm):   # los 4 + 1 opcional extractores, EN ORDEN
         extractor.extraer(forzar)                    # todos tienen la funcion extraer()
     resumen()
     log(f"Listo en {time.time() - inicio:.0f} s")    # :.0f = sin decimales

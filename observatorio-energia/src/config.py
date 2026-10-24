@@ -59,6 +59,9 @@ NOAA_ONI_URL = "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt"
 # --- Fuente 4: archivo interno de EnerAndes (Excel) ------------------------
 ENERANDES_EXCEL = DIR_INSUMOS / "ventas_enerandes_2023_2026.xlsx"
 
+# --- Fuente 5: TRM diaria (datos.gov.co) -----------------------------------
+TRM_URL = "https://www.datos.gov.co/resource/32sa-8pi3.json"
+
 # --- Comportamiento HTTP ---------------------------------------------------
 HTTP_TIMEOUT = 120      # segundos que se espera una respuesta antes de rendirse
 HTTP_REINTENTOS = 4     # intentos ante fallas de red o del servidor

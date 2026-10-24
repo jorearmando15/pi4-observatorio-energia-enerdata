@@ -49,13 +49,18 @@ IDEAM_DEPARTAMENTO = "ANTIOQUIA"
 IDEAM_DIAS_VENTANA = 7          # pedir de a una semana evita timeouts del servidor
 # El IDEAM es la fuente MAS LENTA (5 a 30 s por semana). Para la clase pedimos
 # solo jun-sep 2026. Para el proyecto, usen el mismo rango de las demas fuentes.
-IDEAM_FECHA_INICIO = date(2026, 6, 1)
+IDEAM_FECHA_INICIO = date(2025, 1, 1)
+
+IDEAM_TEMP_URL = "https://www.datos.gov.co/resource/sbwg-7ju4.json"   # temperatura del aire
 
 # --- Fuente 3: NOAA, indice de El Nino (archivo de texto) ------------------
 NOAA_ONI_URL = "https://www.cpc.ncep.noaa.gov/data/indices/oni.ascii.txt"
 
 # --- Fuente 4: archivo interno de EnerAndes (Excel) ------------------------
 ENERANDES_EXCEL = DIR_INSUMOS / "ventas_enerandes_2023_2026.xlsx"
+
+# --- Fuente 5: TRM diaria (datos.gov.co) -----------------------------------
+TRM_URL = "https://www.datos.gov.co/resource/32sa-8pi3.json"
 
 # --- Comportamiento HTTP ---------------------------------------------------
 HTTP_TIMEOUT = 120      # segundos que se espera una respuesta antes de rendirse

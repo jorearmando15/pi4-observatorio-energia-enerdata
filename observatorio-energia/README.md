@@ -138,11 +138,16 @@ Genera `docs/perfilamiento.md` con una tabla por cada archivo de bronce (filas, 
 
 **Pipeline completo** (`python -m src.pipeline`):
 
-![Pipeline](docs/img/pipeline.png)
+![Pipeline](docs\img\pipeline.png)
+
 
 **Pruebas** (`python -m pytest`):
 
 ![Pruebas](docs/img/pytest.png)
+
+**Perfilamiento** (`python scripts.perfilar.py`):
+
+![Perfilamiento](docs/img/perfilar.png)
 
 ## 🎥 Videos de sustentación
 

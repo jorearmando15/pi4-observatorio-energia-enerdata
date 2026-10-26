@@ -153,7 +153,7 @@ Genera `docs/perfilamiento.md` con una tabla por cada archivo de bronce (filas, 
 
 | Integrante | Rol | Video |
 |---|---|---|
-| Jorge Rodriguez | Líder técnico / Data Engineer | [Ver video](PEGAR_ENLACE) |
+| Jorge Rodriguez | Líder técnico / Data Engineer | [Ver video](https://drive.google.com/file/d/1bNzNJwje_EeHqYgiBoDBWKPW9aPt2dA1/view?usp=sharing) |
 | Yusep Ruiz | Data Quality Analyst | [Ver video](https://drive.google.com/file/d/1quJ8_TNNZsXduqJig9HSMViziSR730vp/view?usp=sharing) |
 | Lina Johana Seguro | Analytics Engineer | [Ver video](https://drive.google.com/file/d/1zafbLwwhQ_-Nvk-pmjohu1Ui20SjReix/view?usp=sharing) |
 | Raúl Niño | BI Analyst / Storyteller | [Ver video](PEGAR_ENLACE) |

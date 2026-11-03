@@ -15,3 +15,8 @@ __pycache__/
 *.pyc
 .DS_Store
 Thumbs.db
+
+# Archivos que genera dbt al ejecutarse (se regeneran con dbt build)
+dbt/target/
+dbt/logs/
+dbt/.user.yml

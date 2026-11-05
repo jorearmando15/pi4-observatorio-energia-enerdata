@@ -1,20 +1,35 @@
-# Las fuentes de dbt: las tablas de la capa plata que dbt va a leer.
+# Las fuentes de dbt: las tablas que dbt va a leer.
 # Es un archivo YAML: no se ejecuta; dbt lo lee para saber de donde salen los datos.
+#
+# - bronce: los Parquet tal como los deja el pipeline en data/bronze/.
+#   Se usa para XM, NOAA y para las 4 hojas de EnerAndes (la capa plata
+#   solo tiene la hoja 2023, y el modelo de ventas necesita 2023-2026).
+# - plata: la tabla limpia de EnerAndes que genera src/silver/enerandes.py.
+#   Se conserva declarada para los modelos que quieran leerla.
 
-# La version del formato de este archivo (dbt pide 2)
 version: 2
 
-# La lista de fuentes
 sources:
-  # Una fuente llamada "plata". En los .sql se usa asi: source('plata', ...)
-  - name: plata
-    # Datos extra para el adaptador de DuckDB
+  - name: bronce
+    description: "Capa bronce: dato original + columnas de linaje (_fuente, _origen, _extraido_en)."
     meta:
-      # dbt-duckdb lee cada tabla directo del archivo Parquet de la capa plata.
-      # {name} se reemplaza por el nombre de la tabla: enerandes_ventas
-      # -> data/silver/enerandes_ventas.parquet
-      external_location: "data/silver/{name}.parquet"
-    # Las tablas de esta fuente
+      # dbt-duckdb lee cada tabla directo del Parquet de bronce.
+      # {name} se reemplaza por el nombre de la tabla.
+      external_location: "data/bronze/{name}.parquet"
     tables:
-      # Una tabla: las ventas limpias de EnerAndes
+      - name: enerandes_ventas_2023
+      - name: enerandes_ventas_2024
+      - name: enerandes_ventas_2025
+      - name: enerandes_ventas_2026
+      - name: xm_precio_bolsa
+      - name: xm_demanda
+      - name: xm_generacion
+      - name: xm_listado_recursos
+      - name: noaa_oni
+
+  - name: plata
+    description: "Capa plata: ventas de EnerAndes limpias (por ahora solo la hoja 2023)."
+    meta:
+      external_location: "data/silver/{name}.parquet"
+    tables:
       - name: enerandes_ventas

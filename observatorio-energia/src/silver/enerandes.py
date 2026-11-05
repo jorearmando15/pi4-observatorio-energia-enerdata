@@ -379,5 +379,5 @@ def _escribir_reporte(metricas: list[dict], filas_plata: int, filas_cuarentena: 
     )
 
 
-if _name_ == "_main_":
+if __name__ == "__main__":
     main()

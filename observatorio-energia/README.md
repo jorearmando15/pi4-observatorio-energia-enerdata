@@ -54,6 +54,7 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 # copiar ventas_enerandes_2023_2026.xlsx en data/insumos/
 python -m src.pipeline          # descarga las 5 fuentes a data/bronze/ (unos 40 minutos, casi todo es el IDEAM)
+python -m src.silver.pipeline   # limpia y valida todas las fuentes en data/silver/
 python -m src.consultar         # consultas SQL de BI con DuckDB
 ```
 
@@ -107,6 +108,15 @@ Descarga la tasa de cambio USD/COP del dataset `32sa-8pi3` de datos.gov.co, filt
 ```powershell
 python -m src.extract.trm
 ```
+
+## 🧹 Capa plata y calidad
+
+Ejecuta `python -m src.silver.pipeline` después de contar con los archivos de bronce. Cada tabla se valida con pandera antes de guardarse en `data/silver/`.
+
+- EnerAndes consolida las hojas 2023-2026 en `enerandes_ventas.parquet`; las filas inválidas quedan en `enerandes_cuarentena.parquet`. Se reconocen los encabezados por hoja, los meses en formatos distintos y la fecha día/mes/año de 2026; MWh se convierte a kWh.
+- XM guarda precio, demanda y generación en formato largo: una fila por fecha, hora y recurso. Embalses, aportes y el catálogo de recursos también se normalizan.
+- IDEAM conserva la estación y su municipio, fechas tipadas y mediciones numéricas. NOAA convierte cada trimestre móvil a su mes central y asigna la fase ENSO. TRM conserva los periodos de vigencia y el valor numérico.
+- Los esquemas de las tablas están en `src/quality/esquemas.py`. Las reglas nuevas se prueban con `python -m pytest`.
 
 ## 🧪 Pruebas automáticas
 

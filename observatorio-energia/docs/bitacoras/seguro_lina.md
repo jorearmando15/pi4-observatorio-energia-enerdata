@@ -27,6 +27,8 @@
 ).
 - *PR #33:* feat(quality): definir esquemas de Pandera para ventas y cuarentena(Merged — commit dd993d6
 ).
+- *PR #36:* test(silver): agregar pruebas de reglas de transformacion y actualizar bitacora(Merged — commit 68cbfd7
+).
 
 
 ## Pull Requests que revisé

@@ -334,13 +334,11 @@ def main() -> None:
     log("EnerAndes - limpieza y consolidación 2023-2026")
     limpias_por_anio = []
     cuarentenas = []
-    metricas = []
     for anio in range(2023, 2027):
         bronce = leer_bronce(f"enerandes_ventas_{anio}")
-        limpias, cuarentena, resumen = limpiar(bronce, anio)
+        limpias, cuarentena, _ = limpiar(bronce, anio)
         limpias_por_anio.append(limpias)
         cuarentenas.append(cuarentena)
-        metricas.extend({"anio": anio, **metrica} for metrica in resumen)
         log(f"   {anio}: {len(limpias):,} limpias; {len(cuarentena):,} en cuarentena")
 
     resultado = pd.concat(limpias_por_anio, ignore_index=True)
@@ -356,27 +354,7 @@ def main() -> None:
     cuarentena_total.to_parquet(
         config.DIR_SILVER / "enerandes_cuarentena.parquet", index=False
     )
-    _escribir_reporte(metricas, len(resultado), sum(len(df) for df in cuarentenas))
     log(f"Plata EnerAndes: {len(resultado):,} ventas; {sum(len(df) for df in cuarentenas):,} en cuarentena")
-
-
-def _escribir_reporte(metricas: list[dict], filas_plata: int, filas_cuarentena: int) -> None:
-    config.DIR_DOCS.mkdir(parents=True, exist_ok=True)
-    filas = [
-        "# Reporte de calidad: ventas de EnerAndes (2023-2026)\n",
-        f"- Filas en plata: {filas_plata:,}",
-        f"- Filas en cuarentena: {filas_cuarentena:,}\n",
-        "| Año | Problema | Regla aplicada | Antes | Después |",
-        "|---:|---|---|---:|---:|",
-    ]
-    for metrica in metricas:
-        filas.append(
-            f"| {metrica['anio']} | {metrica['problema']} | {metrica['regla aplicada']} "
-            f"| {metrica['antes']} | {metrica['despues']} |"
-        )
-    (config.DIR_DOCS / "reporte_calidad.md").write_text(
-        "\n".join(filas) + "\n", encoding="utf-8"
-    )
 
 
 if __name__ == "__main__":

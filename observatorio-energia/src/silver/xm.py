@@ -1,5 +1,7 @@
 """Limpieza de las métricas y del catálogo de recursos de XM."""
 import pandas as pd
+
+from src import config
 from src.quality.esquemas import (
     ESQUEMA_XM_APORTES,
     ESQUEMA_XM_DEMANDA,
@@ -7,6 +9,7 @@ from src.quality.esquemas import (
     ESQUEMA_XM_GENERACION,
     ESQUEMA_XM_PRECIO,
     ESQUEMA_XM_RECURSOS,
+    ESQUEMA_XM_RECURSOS_CUARENTENA,
 )
 from src.silver.common import fechas, leer_bronce, numero, guardar_validado, sin_linaje
 from src.utils import log
@@ -63,7 +66,7 @@ def limpiar_diario(bronce: pd.DataFrame) -> pd.DataFrame:
     return df.drop_duplicates().reset_index(drop=True)
 
 
-def limpiar_recursos(bronce: pd.DataFrame) -> pd.DataFrame:
+def separar_recursos(bronce: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     df = sin_linaje(bronce)
     columnas = {
         "Date": "fecha_corte",
@@ -88,7 +91,26 @@ def limpiar_recursos(bronce: pd.DataFrame) -> pd.DataFrame:
         df[columna] = df[columna].str.upper()
     df["fecha_corte"] = fechas(df["fecha_corte"], "Date")
     df["fecha_operacion"] = fechas(df["fecha_operacion"], "OperStartdate")
-    return df.drop_duplicates().reset_index(drop=True)
+    df = df.drop_duplicates().reset_index(drop=True)
+    duplicados = df["codigo"].duplicated(keep=False)
+    cuarentena = df.loc[duplicados].copy()
+    if not cuarentena.empty:
+        nombres_por_codigo = cuarentena.groupby("codigo")["nombre"].transform("nunique")
+        cuarentena["_motivo"] = nombres_por_codigo.gt(1).map(
+            {
+                True: "codigo duplicado con descripciones distintas",
+                False: "codigo duplicado",
+            }
+        )
+    else:
+        cuarentena["_motivo"] = pd.Series(dtype=str)
+    plata = df.loc[~duplicados].reset_index(drop=True)
+    cuarentena = cuarentena.reset_index(drop=True)
+    return plata, cuarentena
+
+
+def limpiar_recursos(bronce: pd.DataFrame) -> pd.DataFrame:
+    return separar_recursos(bronce)[0]
 
 
 def main() -> None:
@@ -107,9 +129,18 @@ def main() -> None:
         guardar_validado(tabla, nombre, esquema)
         log(f"   {nombre}: {len(tabla):,} filas")
 
-    recursos = limpiar_recursos(leer_bronce("xm_listado_recursos"))
+    recursos, recursos_cuarentena = separar_recursos(leer_bronce("xm_listado_recursos"))
     guardar_validado(recursos, "xm_listado_recursos", ESQUEMA_XM_RECURSOS)
-    log(f"   xm_listado_recursos: {len(recursos):,} filas")
+    ESQUEMA_XM_RECURSOS_CUARENTENA.validate(recursos_cuarentena, lazy=True)
+    config.DIR_SILVER.mkdir(parents=True, exist_ok=True)
+    recursos_cuarentena.to_parquet(
+        config.DIR_SILVER / "xm_listado_recursos_cuarentena.parquet",
+        index=False,
+    )
+    log(
+        f"   xm_listado_recursos: {len(recursos):,} plata; "
+        f"{len(recursos_cuarentena):,} en cuarentena"
+    )
 
 
 if __name__ == "__main__":

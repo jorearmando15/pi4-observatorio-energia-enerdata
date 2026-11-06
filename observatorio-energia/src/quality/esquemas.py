@@ -141,6 +141,14 @@ ESQUEMA_XM_RECURSOS = pa.DataFrameSchema(
     strict=True,
 )
 
+ESQUEMA_XM_RECURSOS_CUARENTENA = pa.DataFrameSchema(
+    {
+        **ESQUEMA_XM_RECURSOS.columns,
+        "_motivo": Column(str, _TEXTO),
+    },
+    strict=True,
+)
+
 ESQUEMA_IDEAM_PRECIPITACION = pa.DataFrameSchema(
     {
         "codigoestacion": Column(str, _TEXTO),

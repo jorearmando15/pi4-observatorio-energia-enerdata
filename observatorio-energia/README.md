@@ -54,6 +54,7 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 # copiar ventas_enerandes_2023_2026.xlsx en data/insumos/
 python -m src.pipeline          # descarga las 5 fuentes a data/bronze/ (unos 40 minutos, casi todo es el IDEAM)
+python -m src.silver.pipeline   # limpia y valida todas las fuentes en data/silver/
 python -m src.consultar         # consultas SQL de BI con DuckDB
 ```
 

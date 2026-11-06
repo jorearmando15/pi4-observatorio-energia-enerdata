@@ -61,3 +61,148 @@ ESQUEMA_VENTAS = pa.DataFrameSchema(
     # strict=True: la tabla no puede traer columnas que no esten en este esquema
     strict=True,
 )
+
+ESQUEMA_CUARENTENA_VENTAS = pa.DataFrameSchema(
+    {
+        "periodo": Column(str, nullable=True),
+        "divipola": Column(str, nullable=True),
+        "municipio": Column(str, nullable=True),
+        "segmento": Column(str, nullable=True),
+        "tipo_compra": Column(str, nullable=True),
+        "energia_kwh": Column(float, nullable=True),
+        "valor_cop": Column(float, nullable=True),
+        "clientes": Column(float, nullable=True),
+        "_anio": Column(int, nullable=True),
+        "_fila_origen": Column(float, nullable=True),
+        "_motivo": Column(str, Check.str_length(min_value=1)),
+    },
+    unique=["_anio", "_fila_origen"],
+    strict=True,
+)
+
+_FECHA = Column(pa.DateTime)
+_TEXTO = Check.str_length(min_value=1)
+
+def _esquema_xm_horario() -> pa.DataFrameSchema:
+    return pa.DataFrameSchema(
+        {
+            "fecha": _FECHA,
+            "hora": Column(int, Check.in_range(1, 24)),
+            "id": Column(str, Check.str_length(min_value=1)),
+            "codigo": Column(str, nullable=True),
+            "valor": Column(float, Check.ge(0), nullable=True),
+        },
+        unique=["fecha", "hora", "id", "codigo"],
+        strict=True,
+    )
+
+
+ESQUEMA_XM_PRECIO = _esquema_xm_horario()
+ESQUEMA_XM_DEMANDA = _esquema_xm_horario()
+ESQUEMA_XM_GENERACION = _esquema_xm_horario()
+
+ESQUEMA_XM_EMBALSES = pa.DataFrameSchema(
+    {
+        "fecha": _FECHA,
+        "id": Column(str, _TEXTO),
+        "valor": Column(float, Check.in_range(0, 1)),
+    },
+    unique=["fecha", "id"],
+    strict=True,
+)
+
+ESQUEMA_XM_APORTES = pa.DataFrameSchema(
+    {
+        "fecha": _FECHA,
+        "id": Column(str, _TEXTO),
+        "valor": Column(float, Check.ge(0)),
+    },
+    unique=["fecha", "id"],
+    strict=True,
+)
+
+ESQUEMA_XM_RECURSOS = pa.DataFrameSchema(
+    {
+        "fecha_corte": _FECHA,
+        "id": Column(str, _TEXTO),
+        "codigo": Column(str, _TEXTO),
+        "nombre": Column(str, _TEXTO),
+        "tipo": Column(str, Check.isin(
+            ["HIDRAULICA", "TERMICA", "COGENERADOR", "SOLAR", "EOLICA"]
+        )),
+        "despacho": Column(str, _TEXTO),
+        "tipo_recurso": Column(str, _TEXTO),
+        "codigo_empresa": Column(str, _TEXTO),
+        "fuente_energia": Column(str, _TEXTO),
+        "fecha_operacion": _FECHA,
+        "estado": Column(str, Check.isin(["OPERACION", "PRUEBAS"])),
+    },
+    unique=["codigo"],
+    strict=True,
+)
+
+ESQUEMA_XM_RECURSOS_CUARENTENA = pa.DataFrameSchema(
+    {
+        **ESQUEMA_XM_RECURSOS.columns,
+        "_motivo": Column(str, _TEXTO),
+    },
+    strict=True,
+)
+
+ESQUEMA_IDEAM_PRECIPITACION = pa.DataFrameSchema(
+    {
+        "codigoestacion": Column(str, _TEXTO),
+        "nombreestacion": Column(str, _TEXTO),
+        "municipio": Column(str, _TEXTO),
+        "latitud": Column(float, Check.in_range(-90, 90)),
+        "longitud": Column(float, Check.in_range(-180, 180)),
+        "fecha": _FECHA,
+        "precipitacion_mm": Column(float, Check.ge(0)),
+        "n_obs": Column(int, Check.ge(1)),
+    },
+    unique=["codigoestacion", "fecha"],
+    strict=True,
+)
+
+ESQUEMA_IDEAM_TEMPERATURA = pa.DataFrameSchema(
+    {
+        "codigoestacion": Column(str, _TEXTO),
+        "nombreestacion": Column(str, _TEXTO),
+        "municipio": Column(str, _TEXTO),
+        "latitud": Column(float, Check.in_range(-90, 90)),
+        "longitud": Column(float, Check.in_range(-180, 180)),
+        "fecha": _FECHA,
+        "temp_media_c": Column(float, Check.in_range(-90, 60)),
+        "temp_min_c": Column(float, Check.in_range(-90, 60)),
+        "temp_max_c": Column(float, Check.in_range(-90, 60)),
+        "n_obs": Column(int, Check.ge(1)),
+    },
+    checks=[
+        Check(lambda df: (df["temp_min_c"] <= df["temp_media_c"]).all()),
+        Check(lambda df: (df["temp_media_c"] <= df["temp_max_c"]).all()),
+    ],
+    unique=["codigoestacion", "fecha"],
+    strict=True,
+)
+
+ESQUEMA_NOAA_ONI = pa.DataFrameSchema(
+    {
+        "fecha": _FECHA,
+        "oni": Column(float, Check.in_range(-5, 5)),
+        "fase": Column(str, Check.isin(["El Niño", "La Niña", "Neutral"])),
+    },
+    unique=["fecha"],
+    strict=True,
+)
+
+ESQUEMA_TRM = pa.DataFrameSchema(
+    {
+        "fecha": _FECHA,
+        "fecha_hasta": _FECHA,
+        "valor_cop_por_usd": Column(float, Check.gt(0)),
+        "unidad": Column(str, Check.isin(["COP"])),
+    },
+    unique=["fecha"],
+    checks=[Check(lambda df: (df["fecha_hasta"] >= df["fecha"]).all())],
+    strict=True,
+)

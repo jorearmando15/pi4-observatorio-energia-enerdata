@@ -1,11 +1,16 @@
 """Pruebas unitarias de las reglas nuevas de limpieza de la capa plata."""
 import pandas as pd
 
-from src.quality.esquemas import ESQUEMA_XM_PRECIO, ESQUEMA_NOAA_ONI
+from src.quality.esquemas import (
+    ESQUEMA_NOAA_ONI,
+    ESQUEMA_XM_PRECIO,
+    ESQUEMA_XM_RECURSOS,
+    ESQUEMA_XM_RECURSOS_CUARENTENA,
+)
 from src.silver.enerandes import limpiar as limpiar_enerandes
 from src.silver.ideam import limpiar_precipitacion
 from src.silver.noaa import limpiar as limpiar_noaa
-from src.silver.xm import HORAS, limpiar_horario
+from src.silver.xm import HORAS, limpiar_horario, separar_recursos
 
 
 def ventas_ejemplo(encabezados, filas):
@@ -70,6 +75,35 @@ def test_xm_convierte_24_horas_en_filas_numericas():
     assert tabla["hora"].tolist() == list(range(1, 25))
     assert tabla["valor"].tolist() == [float(i) for i in range(1, 25)]
     assert pd.api.types.is_numeric_dtype(tabla["valor"])
+
+
+def test_xm_envia_todos_los_codigos_de_recurso_conflictivos_a_cuarentena():
+    bronce = pd.DataFrame(
+        {
+            "Date": ["2026-11-04", "2026-11-04"],
+            "Id": ["Sistema", "Sistema"],
+            "Code": ["PRG1", "PRG1"],
+            "Name": ["PROELECTRICA 1", "PROELECTRICA"],
+            "Type": ["Termica", "Termica"],
+            "Disp": ["Despachado", "Despachado"],
+            "RecType": ["Normal", "Normal"],
+            "CompanyCode": ["PRG", "PRG"],
+            "EnerSource": ["Gas", "Gas"],
+            "OperStartdate": ["2020-01-01", "2020-01-01"],
+            "State": ["Operacion", "Operacion"],
+        }
+    )
+
+    plata, cuarentena = separar_recursos(bronce)
+
+    assert plata.empty
+    assert len(cuarentena) == 2
+    assert cuarentena["_motivo"].tolist() == [
+        "codigo duplicado con descripciones distintas",
+        "codigo duplicado con descripciones distintas",
+    ]
+    ESQUEMA_XM_RECURSOS.validate(plata, lazy=True)
+    ESQUEMA_XM_RECURSOS_CUARENTENA.validate(cuarentena, lazy=True)
 
 
 def test_ideam_convierte_fecha_y_mediciones_a_tipos_numericos():

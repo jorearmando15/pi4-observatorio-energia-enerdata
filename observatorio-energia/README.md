@@ -54,11 +54,17 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 # copiar ventas_enerandes_2023_2026.xlsx en data/insumos/
 python -m src.pipeline          # descarga las 5 fuentes a data/bronze/ (unos 40 minutos, casi todo es el IDEAM)
-python -m src.silver.pipeline   # limpia y valida todas las fuentes en data/silver/
+python -m src.transformar       # limpia y valida plata, luego construye y prueba oro con dbt
 python -m src.consultar         # consultas SQL de BI con DuckDB
 ```
 
 > Si el repositorio tiene el proyecto dentro de la carpeta `observatorio-energia`, entra a ella con `cd observatorio-energia` antes de crear el entorno virtual.
+
+`python -m src.transformar` requiere los datos de bronce existentes y `dbt-duckdb`
+instalado en el entorno virtual. No descarga datos: primero ejecuta todas las
+limpiezas y validaciones de plata y genera el reporte de calidad; solo si esa
+etapa termina correctamente ejecuta `dbt build` para crear y probar oro. Para
+ejecutar únicamente la limpieza de plata, usa `python -m src.silver.pipeline`.
 
 Para volver a descargar todo: `python -m src.pipeline --forzar`. El rango de fechas se cambia en `src/config.py`.
 
@@ -119,11 +125,15 @@ La capa oro se construye con dbt en `data/observatorio.duckdb` y contiene
 - [`docs/diccionario_datos.md`](docs/diccionario_datos.md): diccionario con
   columna, tipo de dato, descripción y origen de las 8 tablas de oro.
 
-Para reconstruir el modelo:
+Para reconstruir solo la capa oro, con plata ya procesada y las fuentes de
+bronce requeridas disponibles:
 
 ```powershell
 .\.venv\Scripts\dbt.exe build --project-dir dbt --profiles-dir dbt
 ```
+
+Para construir primero plata y después oro con un solo comando, usa
+`python -m src.transformar` desde la raíz de `observatorio-energia`.
 
 ### Consultas de negocio
 

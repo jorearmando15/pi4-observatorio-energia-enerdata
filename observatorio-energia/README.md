@@ -282,7 +282,7 @@ Genera `docs/perfilamiento.md` con una tabla por cada archivo de bronce (filas, 
 
 ![Pruebas](docs/img/pytest.png)
 
-**Perfilamiento** (`python scripts.perfilar.py`):
+**Perfilamiento** (`python src/perfilar.py`):
 
 ![Perfilamiento](docs/img/perfilar.png)
 

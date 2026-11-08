@@ -10,7 +10,7 @@ Genera docs/perfilamiento.md a partir de los archivos Parquet de data/bronze:
   - Hallazgos de calidad con evidencia numerica.
 
 Uso:
-    .venv\\Scripts\\python.exe scripts/perfilar.py
+    .venv\\Scripts\\python.exe src\\perfilar.py
 """
 import io
 import re
@@ -47,7 +47,9 @@ ORDEN = [
     "xm_generacion",
     "xm_listado_recursos",
     "ideam_precipitacion_diaria",
+    "ideam_temperatura_diaria",
     "noaa_oni",
+    "trm_diaria",
     "enerandes_ventas_2023",
     "enerandes_ventas_2024",
     "enerandes_ventas_2025",
@@ -62,7 +64,9 @@ FUENTE = {
     "xm_generacion": "XM",
     "xm_listado_recursos": "XM",
     "ideam_precipitacion_diaria": "IDEAM",
+    "ideam_temperatura_diaria": "IDEAM",
     "noaa_oni": "NOAA",
+    "trm_diaria": "Banco de la República",
     "enerandes_ventas_2023": "EnerAndes",
     "enerandes_ventas_2024": "EnerAndes",
     "enerandes_ventas_2025": "EnerAndes",
@@ -279,8 +283,12 @@ def perfil_archivo(path: Path) -> dict:
         _extras_listado(df, perfil)
     elif nombre == "ideam_precipitacion_diaria":
         _extras_ideam(df, perfil)
+    elif nombre == "ideam_temperatura_diaria":
+        _extras_temperatura(df, perfil)
     elif nombre == "noaa_oni":
         _extras_noaa(df, perfil)
+    elif nombre == "trm_diaria":
+        _extras_trm(df, perfil)
     elif nombre == "xm_embalses":
         _extras_embalses(df, perfil)
 
@@ -488,6 +496,83 @@ def _extras_ideam(df: pd.DataFrame, perfil: dict) -> None:
     )
 
 
+def _extras_temperatura(df: pd.DataFrame, perfil: dict) -> None:
+    """Temperatura diaria de IDEAM: misma estructura que precipitación."""
+    fechas = pd.to_datetime(df["fecha"], errors="coerce")
+    presentes = set(fechas.dt.normalize().dropna().unique())
+    esperadas = pd.date_range(config.IDEAM_FECHA_INICIO, config.FECHA_FIN)
+    faltantes = [d.date() for d in esperadas if d not in presentes]
+    calendario = pd.date_range(fechas.min().normalize(), fechas.max().normalize())
+    huecos = [d.date() for d in calendario if d not in presentes]
+
+    temp_media = pd.to_numeric(df["temp_media_c"], errors="coerce")
+    temp_min = pd.to_numeric(df["temp_min_c"], errors="coerce")
+    temp_max = pd.to_numeric(df["temp_max_c"], errors="coerce")
+    n_obs = pd.to_numeric(df["n_obs"], errors="coerce")
+    estaciones = int(df["codigoestacion"].nunique())
+    dias = len(presentes)
+    cobertura = df.groupby("codigoestacion").size()
+    fila_max = df.loc[temp_max.idxmax()]
+    fila_min = df.loc[temp_min.idxmin()]
+
+    perfil["extra"] = {
+        "estaciones": estaciones,
+        "municipios": int(df["municipio"].nunique()),
+        "dias": dias,
+        "esperadas": len(esperadas),
+        "faltantes": len(faltantes),
+        "huecos": huecos,
+        "estacion_dia_esperados": estaciones * dias,
+        "estacion_dia_faltantes": estaciones * dias - len(df),
+        "estacion_dia_faltantes_pct": pct(estaciones * dias - len(df), estaciones * dias),
+        "estaciones_incompletas": int((cobertura < dias).sum()),
+        "cobertura_min": int(cobertura.min()),
+        "cobertura_mediana": float(cobertura.median()),
+        "temp_media": float(temp_media.mean()),
+        "temp_media_min": float(temp_media.min()),
+        "temp_media_max": float(temp_media.max()),
+        "temp_min": float(temp_min.min()),
+        "temp_max": float(temp_max.max()),
+        "temp_max_mayor_40": int((temp_max > 40).sum()),
+        "temp_max_mayor_45": int((temp_max > 45).sum()),
+        "n_obs_mediana": float(n_obs.median()),
+        "n_obs_max": int(n_obs.max()),
+        "fila_max": fila_max[
+            ["codigoestacion", "nombreestacion", "municipio", "fecha", "temp_max_c"]
+        ].to_dict(),
+        "fila_min": fila_min[
+            ["codigoestacion", "nombreestacion", "municipio", "fecha", "temp_min_c"]
+        ].to_dict(),
+    }
+    perfil["fecha_detalle"] = (
+        f"{dias} días con datos de {len(esperadas)} esperados "
+        f"({config.IDEAM_FECHA_INICIO} → {config.FECHA_FIN}); "
+        f"faltan {len(faltantes)} días"
+    )
+
+
+def _extras_trm(df: pd.DataFrame, perfil: dict) -> None:
+    """TRM diaria del Banco de la República: vigencia desde/hasta por registro."""
+    desde = pd.to_datetime(df["vigenciadesde"], errors="coerce")
+    hasta = pd.to_datetime(df["vigenciahasta"], errors="coerce")
+    valor = pd.to_numeric(df["valor"], errors="coerce")
+    dias = int(desde.dt.normalize().nunique())
+
+    perfil["fecha_txt"] = f"{desde.min():%Y-%m-%d} → {hasta.max():%Y-%m-%d}"
+    perfil["dias_unicos"] = dias
+    perfil["fecha_detalle"] = f"{entero(dias)} días únicos con datos"
+    perfil["extra"] = {
+        "min": float(valor.min()),
+        "max": float(valor.max()),
+        "media": float(valor.mean()),
+        "unidades": {str(k): int(v) for k, v in df["unidad"].value_counts().items()},
+        "mismo_dia": int((desde.dt.normalize() == hasta.dt.normalize()).sum()),
+        "rango_mayor_0": int(((hasta - desde).dt.days > 0).sum()),
+        "max_dias_vigencia": int((hasta - desde).dt.days.max()),
+        "fechas_duplicadas": int(desde.dt.normalize().duplicated().sum()),
+    }
+
+
 def _extras_noaa(df: pd.DataFrame, perfil: dict) -> None:
     por_anio = df.groupby("YR").size()
     primero, ultimo = df.iloc[0], df.iloc[-1]
@@ -568,6 +653,28 @@ def tabla_tipos(perfil: dict) -> list[str]:
             ("`fecha`", tipo, "Fecha ISO `YYYY-MM-DDT00:00:00.000`"),
             ("`precipitacion_mm`", tipo, "Precipitación diaria agregada (mm), texto"),
             ("`n_obs`", tipo, "Número de observaciones usadas en la agregación"),
+            ("`_fuente`, `_origen`, `_extraido_en`", tipo, "Linaje"),
+        ]
+    elif nombre == "ideam_temperatura_diaria":
+        filas = [
+            ("`codigoestacion`", tipo, "Código de la estación IDEAM"),
+            ("`nombreestacion`", tipo, "Nombre de la estación"),
+            ("`municipio`", tipo, "Municipio de Antioquia"),
+            ("`latitud`", tipo, "Latitud decimal almacenada como texto"),
+            ("`longitud`", tipo, "Longitud decimal almacenada como texto"),
+            ("`fecha`", tipo, "Fecha ISO `YYYY-MM-DDT00:00:00.000`"),
+            ("`temp_media_c`", tipo, "Temperatura media diaria (°C), texto"),
+            ("`temp_min_c`", tipo, "Temperatura mínima diaria (°C), texto"),
+            ("`temp_max_c`", tipo, "Temperatura máxima diaria (°C), texto"),
+            ("`n_obs`", tipo, "Número de observaciones usadas en la agregación"),
+            ("`_fuente`, `_origen`, `_extraido_en`", tipo, "Linaje"),
+        ]
+    elif nombre == "trm_diaria":
+        filas = [
+            ("`valor`", tipo, "Tasa de cambio representativa del mercado (COP por USD), texto"),
+            ("`unidad`", tipo, "Unidad de la TRM (`COP`)"),
+            ("`vigenciadesde`", tipo, "Fecha ISO de inicio de vigencia"),
+            ("`vigenciahasta`", tipo, "Fecha ISO de fin de vigencia"),
             ("`_fuente`, `_origen`, `_extraido_en`", tipo, "Linaje"),
         ]
     elif nombre == "noaa_oni":
@@ -679,6 +786,9 @@ def tabla_ejemplo_duplicado(perfil: dict) -> list[str]:
 
 def escribir_documento(perfiles: dict[str, dict], contraste: dict[str, dict]) -> None:
     ordenados = [perfiles[n] for n in ORDEN if n in perfiles]
+    # Cualquier Parquet nuevo que no este en ORDEN se agrega al final para que
+    # nunca quede fuera del documento.
+    ordenados += [p for n, p in perfiles.items() if n not in ORDEN]
     # Colombia no tiene horario de verano: UTC-5 todo el año.
     zona_colombia = timezone(timedelta(hours=-5), name="UTC-5")
     ts = datetime.now(zona_colombia).strftime("%Y-%m-%d %H:%M UTC-5")
@@ -688,6 +798,7 @@ def escribir_documento(perfiles: dict[str, dict], contraste: dict[str, dict]) ->
     total_celdas = sum(p["celdas_datos"] for p in ordenados)
     total_nulos = sum(p["nulos_total"] for p in ordenados)
     total_duplicados = sum(p["duplicados"] for p in ordenados)
+    total_sin_duplicados = sum(1 for p in ordenados if p["duplicados"] == 0)
 
     enerandes = [p for p in ordenados if p["nombre"].startswith("enerandes")]
     gen = perfiles.get("xm_generacion")
@@ -708,7 +819,7 @@ def escribir_documento(perfiles: dict[str, dict], contraste: dict[str, dict]) ->
         "",
         "## Metodología",
         "",
-        "- Se leen los 12 archivos Parquet de `data/bronze/` sin modificarlos.",
+        f"- Se leen los {len(ordenados)} archivos Parquet de `data/bronze/` sin modificarlos.",
         "- **Nulo:** se cuenta como nulo tanto `NaN` como cadena vacía o solo espacios. "
         "Esto es importante en bronce porque los valores vacíos de XM llegan como `\"\"` y no como `NaN`.",
         "- **Duplicado:** fila idéntica en todas las columnas del archivo, incluidas las de linaje.",
@@ -723,7 +834,7 @@ def escribir_documento(perfiles: dict[str, dict], contraste: dict[str, dict]) ->
         "Para regenerar este documento:",
         "",
         "```powershell",
-        ".\\\\.venv\\\\Scripts\\\\python.exe scripts\\\\perfilar.py",
+        ".\\\\.venv\\\\Scripts\\\\python.exe src\\\\perfilar.py",
         "```",
         "",
         "---",
@@ -893,6 +1004,32 @@ def escribir_documento(perfiles: dict[str, dict], contraste: dict[str, dict]) ->
                 f"{extra['precip_p99']:.2f} mm, máximo {extra['precip_max']:.2f} mm. "
                 f"{extra['precip_ceros_pct']:.2f}% de los registros son cero."
             )
+        elif p["nombre"] == "ideam_temperatura_diaria":
+            lineas.append(
+                f"{entero(extra['estaciones'])} estaciones en {entero(extra['municipios'])} municipios. "
+                f"Cobertura: {extra['dias']} de {extra['esperadas']} días esperados "
+                f"({pct(extra['dias'], extra['esperadas']):.2f}%); faltan {extra['faltantes']} días. "
+                f"Faltan {entero(extra['estacion_dia_faltantes'])} combinaciones estación-día "
+                f"({extra['estacion_dia_faltantes_pct']:.2f}%)."
+            )
+            lineas.append(
+                f"Temperatura media: {extra['temp_media']:.2f} °C (rango {extra['temp_media_min']:.2f} a "
+                f"{extra['temp_media_max']:.2f}); mínima absoluta {extra['temp_min']:.2f} °C y "
+                f"máxima absoluta {extra['temp_max']:.2f} °C. Hay {entero(extra['temp_max_mayor_40'])} "
+                f"registros con máxima > 40 °C ({entero(extra['temp_max_mayor_45'])} > 45 °C)."
+            )
+        elif p["nombre"] == "trm_diaria":
+            unidades_txt = ", ".join(extra["unidades"])
+            lineas.append(
+                f"Serie diaria de TRM en {unidades_txt}: {entero(p['filas'])} registros "
+                f"({p['fecha_txt']}). Valor mínimo {extra['min']:.2f}, máximo "
+                f"{extra['max']:.2f} y media {extra['media']:.2f} COP/USD."
+            )
+            lineas.append(
+                f"{entero(extra['mismo_dia'])} registros tienen vigencia de un solo día y "
+                f"{entero(extra['rango_mayor_0'])} abarcan más de un día natural (hasta "
+                f"{extra['max_dias_vigencia']} días), lo que refleja fines de semana y festivos."
+            )
         elif p["nombre"] == "noaa_oni":
             lineas.append(
                 f"{entero(extra['temporadas'])} temporadas de {extra['anios']} años "
@@ -1007,8 +1144,9 @@ def escribir_documento(perfiles: dict[str, dict], contraste: dict[str, dict]) ->
             f"4. **[Media] Estructura no tabular y esquema variable en EnerAndes.** Los 4 archivos "
             f"suman {entero(estructurales)} filas estructurales (títulos, encabezado, fila TOTAL y "
             "filas vacías) mezcladas con los datos. Las hojas tienen 7, 8, 7 y 7 columnas de datos, "
-            "con encabezados distintos y columnas genéricas `col_0`…`col_7`; el 100% de las 175 "
-            "columnas de los 12 archivos es de tipo texto (`str`). **Impacto:** cualquier consulta "
+            "con encabezados distintos y columnas genéricas `col_0`…`col_7`; el 100% de las "
+            f"{entero(total_columnas)} columnas de los {len(ordenados)} archivos es de tipo texto "
+            "(`str`). **Impacto:** cualquier consulta "
             "directa incluye títulos y totales como si fueran registros. **Acción:** en plata, "
             "descartar filas estructurales, mapear cada hoja a un esquema único y castear tipos."
         )
@@ -1163,15 +1301,16 @@ def escribir_documento(perfiles: dict[str, dict], contraste: dict[str, dict]) ->
             "temporadas), lo cual es esperable para un año en curso."
         )
     lineas.append(
-        f"- **Linaje completo:** los 12 archivos tienen las 3 columnas de linaje "
+        f"- **Linaje completo:** los {len(ordenados)} archivos tienen las 3 columnas de linaje "
         f"(`_fuente`, `_origen`, `_extraido_en`), {entero(total_columnas)} columnas en total, "
         "lo que permite rastrear cada registro hasta su fuente y fecha de extracción."
     )
     lineas.append(
-        f"- **Sin duplicados en 7 de 12 archivos:** los 5 archivos XM de series "
-        f"(`precio_bolsa`, `demanda`, `embalses`, `aportes`, `generacion`), IDEAM y NOAA no "
-        f"presentan filas duplicadas; los {entero(total_duplicados)} duplicados se concentran en "
-        "las 4 hojas de EnerAndes y en el catálogo XM."
+        f"- **Sin duplicados en {total_sin_duplicados} de {len(ordenados)} archivos:** los 5 "
+        "archivos XM de series (`precio_bolsa`, `demanda`, `embalses`, `aportes`, `generacion`), "
+        "las dos fuentes IDEAM (precipitación y temperatura), NOAA y TRM no presentan filas "
+        f"duplicadas; los {entero(total_duplicados)} duplicados se concentran en las 4 hojas de "
+        "EnerAndes y en el catálogo XM."
     )
     lineas.append(
         f"- **Nulos concentrados:** de {entero(total_celdas)} celdas de datos, "
@@ -1186,8 +1325,9 @@ def escribir_documento(perfiles: dict[str, dict], contraste: dict[str, dict]) ->
         "objetivo de conservar el dato tal cual."
     )
     lineas.append(
-        "- **Tipo único por columna:** las 175 columnas de los 12 archivos son de tipo texto "
-        "(`str`). No hay tipos mezclados dentro de una columna, aunque la conversión a "
+        f"- **Tipo único por columna:** las {entero(total_columnas)} columnas de los "
+        f"{len(ordenados)} archivos son de tipo texto (`str`). No hay tipos mezclados dentro de "
+        "una columna, aunque la conversión a "
         "numérico/fecha debe hacerse explícitamente en plata."
     )
 
@@ -1208,7 +1348,7 @@ def escribir_documento(perfiles: dict[str, dict], contraste: dict[str, dict]) ->
         "",
         "---",
         "",
-        f"*Documento generado automáticamente por `scripts/perfilar.py` el {ts}.*",
+        f"*Documento generado automáticamente por `src/perfilar.py` el {ts}.*",
         "",
     ]
 

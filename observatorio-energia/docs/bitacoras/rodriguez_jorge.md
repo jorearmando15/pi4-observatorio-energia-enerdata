@@ -26,11 +26,16 @@
 - **PR #10:** `feat(xm): amplia extraccion a 2024-2026 con Gene, AporEner y ListadoRecursos` (Merged a `main`).
 - **PR #34:** `feat(silver): implementar limpieza de XM, IDEAM, NOAA, TRM y pipeline…` (Commit `82b59e6`).
 - **PR #35:** `docs: actualizar README` (Commit `88f70fe`).
+- **PR #45:** `docs: actualizar bitácora con PRs y commits recientes` (En revisión / Merged a `main`).
 
 ## Pull Requests que revisé e integré (Merges a main)
 - **PR #13:** `feat(ideam): amplia precipitacion desde 2025 y agrega temperatura...` de `@LinaSeguro` (Commit `9c3711d`).
 - **PR #14:** `feat(trm): agrega fuente propia TRM e integra al pipeline` de `@LinaSeguro` (Commit `67fe0ec`).
 - **PR #15:** `test: añadir pruebas unitarias y de integración para la extracción...` de `@yusepruiz` (Commit `be3f16d`).
+- **PR #23:** `yusepruiz-feature/plata-oro` de `@yusepruiz`.
 - **PR #32:** `feat(silver): agregar limpieza y consolidacion de ventas EnerAndes 20…` de `@LinaSeguro` (Commit `d94e9c6`).
 - **PR #33:** `feat(quality): definir esquemas de Pandera para ventas y cuarentena` de `@LinaSeguro` (Commit `dd993d6`).
 - **PR #36:** `test(silver/docs): agregar pruebas de reglas de transformacion y actualiza bitacora.` de `@LinaSeguro` (Commit `921ca80`).
+- **PR #37:** `LinaSeguro-feature/plata-oro` de `@LinaSeguro`.
+- **PR #43:** `feat: agregar tablas faltantes (ideam_temperatura_diaria y trm_diaria)` de `@yusepruiz` (`yusepruiz-feature/plata-oro`).
+- **PR #44:** `docs: actualizar comando en el readme para ejecutar el perfilamiento)` de `@yusepruiz` (`yusepruiz-feature/plata-oro`).

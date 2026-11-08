@@ -2,7 +2,7 @@
 
 > **Proyecto:** Observatorio Energía y Clima — Proyecto Integrado IV  
 > **Capa analizada:** `data/bronze/` (dato tal cual llegó + columnas de linaje)  
-> **Fecha de generación:** 2026-11-08 14:28 UTC-5  
+> **Fecha de generación:** 2026-11-08 14:44 UTC-5  
 > **Archivos analizados:** 14 Parquet  
 > **Herramientas:** pandas 3.1.0, pyarrow 26.0.0  
 
@@ -844,4 +844,4 @@ Los hallazgos se agrupan por fuente y cada uno indica su severidad. Incluyen la 
 
 ---
 
-*Documento generado automáticamente por `src/perfilar.py` el 2026-11-08 14:28 UTC-5.*
+*Documento generado automáticamente por `src/perfilar.py` el 2026-11-08 14:44 UTC-5.*

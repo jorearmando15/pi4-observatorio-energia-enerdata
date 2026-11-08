@@ -2,13 +2,13 @@
 
 > **Proyecto:** Observatorio Energía y Clima — Proyecto Integrado IV  
 > **Capa analizada:** `data/bronze/` (dato tal cual llegó + columnas de linaje)  
-> **Fecha de generación:** 2026-10-27 11:13 UTC-5  
-> **Archivos analizados:** 12 Parquet  
+> **Fecha de generación:** 2026-11-08 14:44 UTC-5  
+> **Archivos analizados:** 14 Parquet  
 > **Herramientas:** pandas 3.1.0, pyarrow 26.0.0  
 
 ## Metodología
 
-- Se leen los 12 archivos Parquet de `data/bronze/` sin modificarlos.
+- Se leen los 14 archivos Parquet de `data/bronze/` sin modificarlos.
 - **Nulo:** se cuenta como nulo tanto `NaN` como cadena vacía o solo espacios. Esto es importante en bronce porque los valores vacíos de XM llegan como `""` y no como `NaN`.
 - **Duplicado:** fila idéntica en todas las columnas del archivo, incluidas las de linaje.
 - **Porcentaje de nulos:** se calcula sobre las columnas de datos (se excluyen `_fuente`, `_origen` y `_extraido_en`, que son metadatos).
@@ -18,7 +18,7 @@
 Para regenerar este documento:
 
 ```powershell
-.\\.venv\\Scripts\\python.exe scripts\\perfilar.py
+.\\.venv\\Scripts\\python.exe src\\perfilar.py
 ```
 
 ---
@@ -34,12 +34,14 @@ Para regenerar este documento:
 | `xm_generacion.parquet` | XM | 350,361 | 30 | 0 | 2,473,215 | 26.14% | 2024-01-01 → 2026-09-30 | 43,127 KB |
 | `xm_listado_recursos.parquet` | XM | 2,493 | 14 | 2 | 0 | 0.00% | 2026-10-25 → 2026-10-25 | 74 KB |
 | `ideam_precipitacion_diaria.parquet` | IDEAM | 29,804 | 11 | 0 | 0 | 0.00% | 2025-01-01 → 2026-07-24 | 102 KB |
+| `ideam_temperatura_diaria.parquet` | IDEAM | 17,349 | 13 | 0 | 0 | 0.00% | 2025-01-01 → 2026-07-24 | 164 KB |
 | `noaa_oni.parquet` | NOAA | 920 | 7 | 0 | 0 | 0.00% | 1950 (DJF) → 2026 (JAS) | 10 KB |
+| `trm_diaria.parquet` | Banco de la República | 649 | 7 | 0 | 0 | 0.00% | 2024-01-03 → 2026-09-30 | 17 KB |
 | `enerandes_ventas_2023.parquet` | EnerAndes | 1,114 | 10 | 32 | 37 | 0.47% | 2023-01 → 2023-12 | 33 KB |
 | `enerandes_ventas_2024.parquet` | EnerAndes | 1,114 | 11 | 32 | 28 | 0.31% | 2024-01 → 2024-12 | 35 KB |
 | `enerandes_ventas_2025.parquet` | EnerAndes | 1,117 | 10 | 32 | 41 | 0.52% | 2025-01 → 2025-12 | 33 KB |
 | `enerandes_ventas_2026.parquet` | EnerAndes | 839 | 10 | 24 | 42 | 0.72% | 2026-01 → 2026-09 | 27 KB |
-| **Total** | — | **391,778** | **175** | **122** | **2,473,363** | **25.19%** | — | — |
+| **Total** | — | **409,776** | **195** | **122** | **2,473,363** | **24.74%** | — | — |
 
 > Las columnas incluyen las 3 de linaje (`_fuente`, `_origen`, `_extraido_en`). El porcentaje de nulos se calcula solo sobre columnas de datos.
 
@@ -411,7 +413,58 @@ Precipitación: media 7.88 mm, p99 77.80 mm, máximo 3081.80 mm. 42.29% de los r
 
 ---
 
-### 8. `noaa_oni.parquet`
+### 8. `ideam_temperatura_diaria.parquet`
+
+#### Ficha
+
+| Métrica | Valor |
+|---|---|
+| Fuente | IDEAM |
+| Filas | 17,349 |
+| Columnas totales | 13 (incluye 3 de linaje) |
+| Columnas de datos | 10 |
+| Tipo físico | `str` |
+| Filas duplicadas exactas | 0 |
+| Celdas nulas (datos) | 0 de 173,490 (0.00%) |
+| Rango de fechas | 2025-01-01 → 2026-07-24 |
+| Detalle temporal | 528 días con datos de 638 esperados (2025-01-01 → 2026-09-30); faltan 110 días |
+| Tamaño en disco | 164.2 KB |
+
+#### Tipos de datos
+
+| Columna(s) | Tipo físico | Tipo lógico / contenido |
+|---|---|---|
+| `codigoestacion` | `str` | Código de la estación IDEAM |
+| `nombreestacion` | `str` | Nombre de la estación |
+| `municipio` | `str` | Municipio de Antioquia |
+| `latitud` | `str` | Latitud decimal almacenada como texto |
+| `longitud` | `str` | Longitud decimal almacenada como texto |
+| `fecha` | `str` | Fecha ISO `YYYY-MM-DDT00:00:00.000` |
+| `temp_media_c` | `str` | Temperatura media diaria (°C), texto |
+| `temp_min_c` | `str` | Temperatura mínima diaria (°C), texto |
+| `temp_max_c` | `str` | Temperatura máxima diaria (°C), texto |
+| `n_obs` | `str` | Número de observaciones usadas en la agregación |
+| `_fuente`, `_origen`, `_extraido_en` | `str` | Linaje |
+
+#### Porcentaje de nulos por columna
+
+| Columna(s) | Nulos | % de filas |
+|---|---:|---:|
+| `codigoestacion`, `nombreestacion`, `municipio`, `latitud`, `longitud`, `fecha`, `temp_media_c`, `temp_min_c`, `temp_max_c`, `n_obs` | 0 | 0.00% |
+| `_fuente`, `_origen`, `_extraido_en` | 0 | 0.00% |
+
+#### Filas duplicadas
+
+No se encontraron filas duplicadas exactas (0 filas).
+
+#### Observaciones
+
+44 estaciones en 37 municipios. Cobertura: 528 de 638 días esperados (82.76%); faltan 110 días. Faltan 5,883 combinaciones estación-día (25.32%).
+Temperatura media: 20.34 °C (rango 7.75 a 36.33); mínima absoluta 0.00 °C y máxima absoluta 50.00 °C. Hay 45 registros con máxima > 40 °C (21 > 45 °C).
+
+---
+
+### 9. `noaa_oni.parquet`
 
 #### Ficha
 
@@ -455,7 +508,52 @@ No se encontraron filas duplicadas exactas (0 filas).
 
 ---
 
-### 9. `enerandes_ventas_2023.parquet`
+### 10. `trm_diaria.parquet`
+
+#### Ficha
+
+| Métrica | Valor |
+|---|---|
+| Fuente | Banco de la República |
+| Filas | 649 |
+| Columnas totales | 7 (incluye 3 de linaje) |
+| Columnas de datos | 4 |
+| Tipo físico | `str` |
+| Filas duplicadas exactas | 0 |
+| Celdas nulas (datos) | 0 de 2,596 (0.00%) |
+| Rango de fechas | 2024-01-03 → 2026-09-30 |
+| Detalle temporal | 649 días únicos con datos |
+| Tamaño en disco | 17.1 KB |
+
+#### Tipos de datos
+
+| Columna(s) | Tipo físico | Tipo lógico / contenido |
+|---|---|---|
+| `valor` | `str` | Tasa de cambio representativa del mercado (COP por USD), texto |
+| `unidad` | `str` | Unidad de la TRM (`COP`) |
+| `vigenciadesde` | `str` | Fecha ISO de inicio de vigencia |
+| `vigenciahasta` | `str` | Fecha ISO de fin de vigencia |
+| `_fuente`, `_origen`, `_extraido_en` | `str` | Linaje |
+
+#### Porcentaje de nulos por columna
+
+| Columna(s) | Nulos | % de filas |
+|---|---:|---:|
+| `valor`, `unidad`, `vigenciadesde`, `vigenciahasta` | 0 | 0.00% |
+| `_fuente`, `_origen`, `_extraido_en` | 0 | 0.00% |
+
+#### Filas duplicadas
+
+No se encontraron filas duplicadas exactas (0 filas).
+
+#### Observaciones
+
+Serie diaria de TRM en COP: 649 registros (2024-01-03 → 2026-09-30). Valor mínimo 3048.12, máximo 4478.21 y media 3910.52 COP/USD.
+492 registros tienen vigencia de un solo día y 157 abarcan más de un día natural (hasta 4 días), lo que refleja fines de semana y festivos.
+
+---
+
+### 11. `enerandes_ventas_2023.parquet`
 
 #### Ficha
 
@@ -516,7 +614,7 @@ Anomalías de categoría: segmento `IND`/`RESID.` en 32 filas; compra `CONTRATOS
 
 ---
 
-### 10. `enerandes_ventas_2024.parquet`
+### 12. `enerandes_ventas_2024.parquet`
 
 #### Ficha
 
@@ -580,7 +678,7 @@ Anomalías de categoría: segmento `IND`/`RESID.` en 40 filas; compra `CONTRATOS
 
 ---
 
-### 11. `enerandes_ventas_2025.parquet`
+### 13. `enerandes_ventas_2025.parquet`
 
 #### Ficha
 
@@ -641,7 +739,7 @@ Anomalías de categoría: segmento `IND`/`RESID.` en 50 filas; compra `CONTRATOS
 
 ---
 
-### 12. `enerandes_ventas_2026.parquet`
+### 14. `enerandes_ventas_2026.parquet`
 
 #### Ficha
 
@@ -709,7 +807,7 @@ Los hallazgos se agrupan por fuente y cada uno indica su severidad. Incluyen la 
 1. **[Alta] Nulos encubiertos en `xm_generacion`.** `isna()` reporta 0 nulos, pero hay **2,473,215 celdas horarias vacías** de 8,408,664 (29.41%). El porcentaje por hora va de 6.77% (`Hour14`) a 52.75% (`Hour04`). En el archivo completo, las celdas nulas son 2,473,215 de 9,459,747 (26.14%). **Impacto:** promedios y sumas sesgados si no se convierten las cadenas vacías a `NaN`. **Acción:** en plata, `pd.to_numeric(..., errors='coerce')` y tratar los vacíos como dato faltante.
 2. **[Alta] Cobertura incompleta en `xm_generacion`.** Hay 633 recursos y 1,004 días: 635,532 combinaciones posibles, pero solo 350,361 filas (55.13%). Faltan **285,171 combinaciones recurso-día (44.79%)**. Filas por recurso: mínimo 1, mediana 556.0, máximo 1,004; 10 recursos tienen ≤10 días, 95 tienen ≤100 y solo 25 tienen los 1,004 días. **Impacto:** no se puede asumir una serie continua por planta. **Acción:** distinguir “no despachado” de “sin dato” y documentar la regla de negocio.
 3. **[Alta] Duplicados exactos en EnerAndes.** Hay **120 filas duplicadas** en 4,170 filas de datos (2.88%): `2023`: 32, `2024`: 32, `2025`: 32, `2026`: 24. Todas son pares idénticos. El Excel de origen también suma 120 duplicados en las 4 hojas, por lo que se heredaron de la fuente. **Impacto:** duplican consumo, facturación y clientes al agregar. **Acción:** deduplicar en plata con la clave de negocio (periodo + municipio + segmento + modalidad) y conservar una fila.
-4. **[Media] Estructura no tabular y esquema variable en EnerAndes.** Los 4 archivos suman 14 filas estructurales (títulos, encabezado, fila TOTAL y filas vacías) mezcladas con los datos. Las hojas tienen 7, 8, 7 y 7 columnas de datos, con encabezados distintos y columnas genéricas `col_0`…`col_7`; el 100% de las 175 columnas de los 12 archivos es de tipo texto (`str`). **Impacto:** cualquier consulta directa incluye títulos y totales como si fueran registros. **Acción:** en plata, descartar filas estructurales, mapear cada hoja a un esquema único y castear tipos.
+4. **[Media] Estructura no tabular y esquema variable en EnerAndes.** Los 4 archivos suman 14 filas estructurales (títulos, encabezado, fila TOTAL y filas vacías) mezcladas con los datos. Las hojas tienen 7, 8, 7 y 7 columnas de datos, con encabezados distintos y columnas genéricas `col_0`…`col_7`; el 100% de las 195 columnas de los 14 archivos es de tipo texto (`str`). **Impacto:** cualquier consulta directa incluye títulos y totales como si fueran registros. **Acción:** en plata, descartar filas estructurales, mapear cada hoja a un esquema único y castear tipos.
 5. **[Media] Fechas heterogéneas en EnerAndes.** Se usan **4 formatos**: MM/YYYY: 1,500, YYYY-MM: 1,466, DD/MM/YYYY: 834, mmm-YY: 370. Solo 2026 tiene fecha a nivel de día (`DD/MM/YYYY`, 834 filas); 2023–2025 son mensuales. Además, 370 filas usan abreviaturas de mes en inglés (`jan-24`, `apr-24`, `aug-24`) mezcladas con `MM/YYYY`. **Impacto:** riesgo de interpretar `DD/MM` como `MM/DD` y de perder el día en los años mensuales. **Acción:** parsear con formatos explícitos y normalizar a `date`/`timestamp`.
 6. **[Alta] Unidades mezcladas en EnerAndes 2024.** 347 de 1,112 filas (31.21%) reportan energía en `MWh` y 765 en `kWh`. La energía declarada suma 489,552,798 kWh en las filas kWh y 261,999 MWh en las filas MWh. **Impacto:** sumar ambas columnas sin convertir produce un error de 1,000×. **Acción:** convertir todo a kWh (MWh × 1,000) antes de agregar; 2023, 2025 y 2026 no traen columna de unidad y se asumen kWh.
 7. **[Media] Categorías y nulos en campos clave de EnerAndes.** Hay **153 filas (3.67%)** con segmento `IND`/`RESID.` en lugar de `Industrial`/`Residencial`, y **221 filas (5.30%)** con `CONTRATOS`/`bolsa` en lugar de `Contrato`/`Bolsa`. Los municipios tienen 29, 30, 28 y 28 grafías crudas para solo 15 nombres normalizados (`Rio Negro`/`Rionegro (Ant)`, `envigado`, `ITAGUI`, `Sta Fe de Antioquia`). Además, en filas de datos faltan **29 segmentos, 27 energías y 11 valores facturados** (**85 celdas nulas de 30,302, 0.28%**). **Impacto:** agrupaciones fragmentadas y totales incompletos. **Acción:** catálogo de normalización y regla explícita de imputación/rechazo para nulos.
@@ -725,11 +823,11 @@ Los hallazgos se agrupan por fuente y cada uno indica su severidad. Incluyen la 
 
 - **Series XM completas:** `xm_precio_bolsa`, `xm_demanda`, `xm_embalses` y `xm_aportes` tienen 1,004 filas cada una, 1,004 días únicos, 0 nulos y 0 duplicados en el rango 2024-01-01 → 2026-09-30. Son la base más sólida para series de tiempo.
 - **NOAA consistente:** 920 temporadas de 77 años, 0 nulos y 0 duplicados; solo 2026 está parcial (8/12 temporadas), lo cual es esperable para un año en curso.
-- **Linaje completo:** los 12 archivos tienen las 3 columnas de linaje (`_fuente`, `_origen`, `_extraido_en`), 175 columnas en total, lo que permite rastrear cada registro hasta su fuente y fecha de extracción.
-- **Sin duplicados en 7 de 12 archivos:** los 5 archivos XM de series (`precio_bolsa`, `demanda`, `embalses`, `aportes`, `generacion`), IDEAM y NOAA no presentan filas duplicadas; los 122 duplicados se concentran en las 4 hojas de EnerAndes y en el catálogo XM.
-- **Nulos concentrados:** de 9,819,924 celdas de datos, 2,473,363 son nulas (25.19%); 2,473,215 de ellas están en `xm_generacion`. El resto de archivos tiene 0 nulos o valores marginales.
+- **Linaje completo:** los 14 archivos tienen las 3 columnas de linaje (`_fuente`, `_origen`, `_extraido_en`), 195 columnas en total, lo que permite rastrear cada registro hasta su fuente y fecha de extracción.
+- **Sin duplicados en 9 de 14 archivos:** los 5 archivos XM de series (`precio_bolsa`, `demanda`, `embalses`, `aportes`, `generacion`), las dos fuentes IDEAM (precipitación y temperatura), NOAA y TRM no presentan filas duplicadas; los 122 duplicados se concentran en las 4 hojas de EnerAndes y en el catálogo XM.
+- **Nulos concentrados:** de 9,996,010 celdas de datos, 2,473,363 son nulas (24.74%); 2,473,215 de ellas están en `xm_generacion`. El resto de archivos tiene 0 nulos o valores marginales.
 - **Bronce fiel a la fuente:** las 4 hojas de EnerAndes coinciden con sus Parquet en filas, columnas y duplicados, y las filas estructurales también existen en el Excel original; el pipeline no las introdujo. Esto confirma que la capa bronce cumple su objetivo de conservar el dato tal cual.
-- **Tipo único por columna:** las 175 columnas de los 12 archivos son de tipo texto (`str`). No hay tipos mezclados dentro de una columna, aunque la conversión a numérico/fecha debe hacerse explícitamente en plata.
+- **Tipo único por columna:** las 195 columnas de los 14 archivos son de tipo texto (`str`). No hay tipos mezclados dentro de una columna, aunque la conversión a numérico/fecha debe hacerse explícitamente en plata.
 
 ## Recomendaciones para la capa plata
 
@@ -746,4 +844,4 @@ Los hallazgos se agrupan por fuente y cada uno indica su severidad. Incluyen la 
 
 ---
 
-*Documento generado automáticamente por `scripts/perfilar.py` el 2026-10-27 11:13 UTC-5.*
+*Documento generado automáticamente por `src/perfilar.py` el 2026-11-08 14:44 UTC-5.*

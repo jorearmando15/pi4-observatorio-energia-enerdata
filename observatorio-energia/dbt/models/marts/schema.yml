@@ -1,56 +1,95 @@
 # Pruebas de dbt sobre la capa oro. "dbt build" las ejecuta despues de crear cada tabla.
 # Es un archivo YAML: no se ejecuta; dbt lo lee para saber que probar en cada tabla.
+#
+# Convencion:
+#   - En las DIMENSIONES, la llave lleva unique + not_null.
+#   - En las tablas de HECHOS, cada llave lleva not_null + relationships
+#     (apunta a la dimension donde vive esa llave).
+#   - La descripcion de cada hecho empieza con "Grano:" para dejar claro
+#     que representa una fila.
 
-# La version del formato de este archivo (dbt pide 2)
 version: 2
 
-# La lista de modelos (tablas) y sus pruebas
 models:
-  # La tabla dim_mes
-  - name: dim_mes
-    # Una descripcion corta de la tabla (sale en la documentacion de dbt)
-    description: "Un mes con ventas."
-    # Las columnas que se prueban
+  # -------------------------------------------------------------------------
+  # DIMENSIONES
+  # -------------------------------------------------------------------------
+
+  # Calendario diario.
+  - name: dim_fecha
+    description: "Un dia del calendario (2023-01-01 a 2026-12-31), con mes, trimestre, dia de la semana y fase ENSO."
     columns:
-      # La columna mes_id (la llave)
+      - name: fecha_id
+        description: "Llave: fecha como numero AAAAMMDD."
+        data_tests: [unique, not_null]
+      - name: fecha
+        data_tests: [not_null]
+      - name: fase_enso
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ["El Niño", "La Niña", "Neutral", "Sin dato"]
+
+  # Un mes con ventas.
+  - name: dim_mes
+    description: "Un mes con ventas, con su anio y trimestre."
+    columns:
       - name: mes_id
-        # unique: no se repite; not_null: nunca esta vacia
+        description: "Llave: anio y mes como numero AAAAMM (202304)."
         data_tests: [unique, not_null]
 
-  # La tabla dim_municipio
+  # Un municipio de Antioquia.
   - name: dim_municipio
     description: "Un municipio de Antioquia con su codigo DIVIPOLA."
     columns:
-      # La llave: no se repite y nunca esta vacia
       - name: municipio_id
+        description: "Llave: codigo DIVIPOLA de 5 digitos (05001)."
         data_tests: [unique, not_null]
 
-  # La tabla dim_segmento
+  # Un segmento de cliente.
   - name: dim_segmento
-    description: "Un segmento de cliente."
+    description: "Un segmento de cliente (Comercial, Industrial, Residencial, No informado)."
     columns:
-      # La llave: no se repite y nunca esta vacia
       - name: segmento_id
+        description: "Llave: numero asignado al segmento."
         data_tests: [unique, not_null]
 
-  # La tabla de hechos
-  - name: fact_ventas_mensual
-    description: "Ventas de energia por mes, municipio, segmento y tipo de compra."
+  # Una planta de generacion.
+  - name: dim_recurso
+    description: "Un recurso (planta) del catalogo de XM, con tipo, estado y si esta en el catalogo."
     columns:
-      # La llave al mes
+      - name: recurso_id
+        description: "Llave: codigo del recurso en XM (2QBW)."
+        data_tests: [unique, not_null]
+
+  # -------------------------------------------------------------------------
+  # TABLAS DE HECHOS
+  # -------------------------------------------------------------------------
+
+  - name: fact_ventas_mensual
+    description: >
+      Ventas de energia de EnerAndes entre 2023 y 2026.
+      Grano: un mes, un municipio, un segmento y un tipo de compra
+      (una fila por cada combinacion de esas cuatro llaves).
+    columns:
+      # Llave al mes.
       - name: mes_id
         data_tests:
-          # Nunca esta vacia
           - not_null
-          # relationships: cada mes_id del hecho debe existir en dim_mes
-          # (si no, seria una venta de un mes que no esta en la dimension)
           - relationships:
               arguments:
-                # La tabla con la que se compara
                 to: ref('dim_mes')
-                # La columna de esa tabla
                 field: mes_id
-      # La llave al municipio: nunca vacia y debe existir en dim_municipio
+      # Llave a la fecha (dia 1 del mes).
+      - name: fecha_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_fecha')
+                field: fecha_id
+      # Llave al municipio.
       - name: municipio_id
         data_tests:
           - not_null
@@ -58,7 +97,7 @@ models:
               arguments:
                 to: ref('dim_municipio')
                 field: municipio_id
-      # La llave al segmento: nunca vacia y debe existir en dim_segmento
+      # Llave al segmento.
       - name: segmento_id
         data_tests:
           - not_null
@@ -66,10 +105,60 @@ models:
               arguments:
                 to: ref('dim_segmento')
                 field: segmento_id
-      # El tipo de compra
+      # El tipo de compra es parte del grano: nunca vacio.
       - name: tipo_compra
         data_tests:
-          # accepted_values: solo se aceptan los valores de esta lista
+          - not_null
           - accepted_values:
               arguments:
                 values: ["Bolsa", "Contrato"]
+
+  - name: fact_mercado_horario
+    description: >
+      Precio de bolsa y demanda real del sistema electrico, tomados de XM.
+      Grano: un dia y una hora (una fila por cada par fecha-hora; 24 filas por dia).
+    columns:
+      # Llave a la fecha.
+      - name: fecha_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_fecha')
+                field: fecha_id
+      # La hora es parte del grano.
+      - name: hora
+        data_tests: [not_null]
+      # Medidas.
+      - name: precio_cop_kwh
+        data_tests: [not_null]
+      - name: demanda_kwh
+        data_tests: [not_null]
+
+  - name: fact_generacion_recurso
+    description: >
+      Generacion horaria de cada planta del sistema electrico, tomada de XM.
+      Grano: un dia, una hora y un recurso (una fila por cada planta en cada hora de cada dia).
+    columns:
+      # Llave a la fecha.
+      - name: fecha_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_fecha')
+                field: fecha_id
+      # La hora es parte del grano.
+      - name: hora
+        data_tests: [not_null]
+      # Llave al recurso (planta).
+      - name: recurso_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_recurso')
+                field: recurso_id
+      # Medida.
+      - name: generacion_kwh
+        data_tests: [not_null]

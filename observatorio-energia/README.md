@@ -54,11 +54,17 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 # copiar ventas_enerandes_2023_2026.xlsx en data/insumos/
 python -m src.pipeline          # descarga las 5 fuentes a data/bronze/ (unos 40 minutos, casi todo es el IDEAM)
-python -m src.silver.pipeline   # limpia y valida todas las fuentes en data/silver/
+python -m src.transformar       # limpia y valida plata, luego construye y prueba oro con dbt
 python -m src.consultar         # consultas SQL de BI con DuckDB
 ```
 
 > Si el repositorio tiene el proyecto dentro de la carpeta `observatorio-energia`, entra a ella con `cd observatorio-energia` antes de crear el entorno virtual.
+
+`python -m src.transformar` requiere los datos de bronce existentes y `dbt-duckdb`
+instalado en el entorno virtual. No descarga datos: primero ejecuta todas las
+limpiezas y validaciones de plata y genera el reporte de calidad; solo si esa
+etapa termina correctamente ejecuta `dbt build` para crear y probar oro. Para
+ejecutar únicamente la limpieza de plata, usa `python -m src.silver.pipeline`.
 
 Para volver a descargar todo: `python -m src.pipeline --forzar`. El rango de fechas se cambia en `src/config.py`.
 
@@ -109,14 +115,135 @@ Descarga la tasa de cambio USD/COP del dataset `32sa-8pi3` de datos.gov.co, filt
 python -m src.extract.trm
 ```
 
-## 🧹 Capa plata y calidad
+## 🥇 Capa oro: modelo estrella y consultas de negocio
 
-Ejecuta `python -m src.silver.pipeline` después de contar con los archivos de bronce. Cada tabla se valida con pandera antes de guardarse en `data/silver/`.
+La capa oro se construye con dbt en `data/observatorio.duckdb` y contiene
+**3 tablas de hechos y 5 dimensiones**. La documentación completa está en:
 
-- EnerAndes consolida las hojas 2023-2026 en `enerandes_ventas.parquet`; las filas inválidas quedan en `enerandes_cuarentena.parquet`. Se reconocen los encabezados por hoja, los meses en formatos distintos y la fecha día/mes/año de 2026; MWh se convierte a kWh.
-- XM guarda precio, demanda y generación en formato largo: una fila por fecha, hora y recurso. Embalses, aportes y el catálogo de recursos también se normalizan.
-- IDEAM conserva la estación y su municipio, fechas tipadas y mediciones numéricas. NOAA convierte cada trimestre móvil a su mes central y asigna la fase ENSO. TRM conserva los periodos de vigencia y el valor numérico.
-- Los esquemas de las tablas están en `src/quality/esquemas.py`. Las reglas nuevas se prueban con `python -m pytest`.
+- [`docs/modelo_dimensional.md`](docs/modelo_dimensional.md): diagrama Mermaid
+  del esquema estrella y explicación del grano de cada hecho.
+- [`docs/diccionario_datos.md`](docs/diccionario_datos.md): diccionario con
+  columna, tipo de dato, descripción y origen de las 8 tablas de oro.
+
+Para reconstruir solo la capa oro, con plata ya procesada y las fuentes de
+bronce requeridas disponibles:
+
+```powershell
+.\.venv\Scripts\dbt.exe build --project-dir dbt --profiles-dir dbt
+```
+
+Para construir primero plata y después oro con un solo comando, usa
+`python -m src.transformar` desde la raíz de `observatorio-energia`.
+
+### Consultas de negocio
+
+Las consultas SQL están en `consultas/oro/` y se ejecutan contra la base oro en
+modo solo lectura:
+
+```powershell
+.\.venv\Scripts\python.exe -c "import duckdb, pathlib; con=duckdb.connect('data/observatorio.duckdb', read_only=True); [print('==', p.name, '==\n', con.sql(p.read_text(encoding='utf-8')).df().to_string(index=False)) for p in sorted(pathlib.Path('consultas/oro').glob('*.sql'))]"
+```
+
+#### 1. ¿Cómo cambian el precio y la demanda según la fase ENSO?
+
+Consulta: `consultas/oro/01_impacto_enso_precio_demanda.sql`
+
+| fase_enso | horas | precio_promedio_cop_kwh | demanda_promedio_kwh | precio_maximo_cop_kwh |
+|:---|---:|---:|---:|---:|
+| El Niño | 5,856 | 661 | 9,753,759 | 1,279 |
+| Neutral | 15,312 | 414 | 9,475,758 | 2,676 |
+| La Niña | 2,208 | 223 | 9,650,512 | 1,079 |
+
+**Lectura:** en promedio, la energía es más cara en El Niño (661 COP/kWh) que
+en Neutral (414) y que en La Niña (223). La demanda promedio es similar en las
+tres fases, así que la diferencia de precio no se explica solo por demanda: es
+consistente con una menor oferta hidráulica en la fase cálida. La consulta
+excluye las 720 horas de septiembre de 2026 que aún no tienen ONI.
+
+#### 2. ¿Cómo evolucionó la matriz de generación por tipo de planta?
+
+Consulta: `consultas/oro/02_matriz_generacion_por_tipo.sql`
+
+| anio | tipo | generacion_gwh | participacion_pct |
+|---:|:---|---:|---:|
+| 2024 | Hidráulica | 54,494.3 | 66.1 |
+| 2024 | Térmica | 24,441.8 | 29.7 |
+| 2024 | Solar | 3,297.2 | 4.0 |
+| 2024 | Eólica | 148.8 | 0.2 |
+| 2025 | Hidráulica | 68,099.4 | 81.5 |
+| 2025 | Térmica | 10,813.8 | 12.9 |
+| 2025 | Solar | 4,473.8 | 5.4 |
+| 2025 | Eólica | 154.9 | 0.2 |
+| 2026 | Hidráulica | 47,528.3 | 72.2 |
+| 2026 | Térmica | 12,935.5 | 19.6 |
+| 2026 | Solar | 5,229.4 | 7.9 |
+| 2026 | Eólica | 155.2 | 0.2 |
+
+**Lectura:** 2025 fue el año más húmedo de la muestra (81,5% hidráulica y
+12,9% térmica). En 2026 (enero a septiembre) la hidráulica baja a 72,2% y la
+térmica sube a 19,6%, señal de mayor dependencia de plantas térmicas. 2024 ya
+había sido un año seco (66,1% hidráulica y 29,7% térmica). La comparación de
+2026 es indicativa porque el año está incompleto. La tabla incluye las cuatro
+tecnologías principales; Cogenerador y No informado quedan fuera.
+
+#### 3. ¿En qué horas se concentra la demanda y cuándo es más cara la energía?
+
+Consulta: `consultas/oro/03_perfil_horario_demanda_precio.sql`
+
+| hora | precio_promedio_cop_kwh | demanda_promedio_kwh |
+|---:|---:|---:|
+| 1 | 420 | 8,712,276 |
+| 2 | 410 | 8,416,696 |
+| 3 | 398 | 8,200,509 |
+| 4 | 392 | 8,082,390 |
+| 5 | 399 | 8,169,164 |
+| 6 | 418 | 8,396,449 |
+| 7 | 415 | 8,495,009 |
+| 8 | 407 | 8,905,922 |
+| 9 | 404 | 9,341,291 |
+| 10 | 405 | 9,634,153 |
+| 11 | 420 | 9,965,998 |
+| 12 | 438 | 10,239,409 |
+| 13 | 438 | 10,236,644 |
+| 14 | 450 | 10,313,571 |
+| 15 | 471 | 10,439,279 |
+| 16 | 490 | 10,446,260 |
+| 17 | 508 | 10,343,585 |
+| 18 | 522 | 10,229,709 |
+| 19 | 611 | 10,752,275 |
+| 20 | 659 | 10,909,207 |
+| 21 | 585 | 10,690,808 |
+| 22 | 533 | 10,271,439 |
+| 23 | 492 | 9,713,525 |
+| 24 | 458 | 9,162,098 |
+
+**Lectura:** la demanda máxima se concentra entre las horas 19 y 21 (10,75 a
+10,91 GWh/h) y el precio promedio máximo ocurre en la hora 20 (659 COP/kWh).
+Las horas 3 a 5 son el valle, con precios de 392 a 399 COP/kWh y demanda de
+8,08 a 8,20 GWh/h. La hora 1 equivale a 00:00-01:00 y la 24 a 23:00-24:00.
+
+#### 4. ¿Qué municipios concentran las ventas de energía de EnerAndes?
+
+Consulta: `consultas/oro/04_ventas_por_municipio.sql`
+
+| municipio | energia_gwh | valor_millones_cop | clientes_promedio_mes |
+|:---|---:|---:|---:|
+| Medellín | 1,246.7 | 1,250,093 | 79,774 |
+| Bello | 318.4 | 319,371 | 20,116 |
+| Itagüí | 239.9 | 240,529 | 15,524 |
+| Envigado | 211.1 | 209,413 | 13,697 |
+| Rionegro | 150.1 | 150,527 | 9,752 |
+| Sabaneta | 111.5 | 111,511 | 7,106 |
+| Apartadó | 100.1 | 98,993 | 6,422 |
+| Turbo | 73.8 | 73,772 | 4,779 |
+| La Estrella | 62.2 | 61,756 | 3,984 |
+| Caldas | 62.1 | 61,707 | 4,009 |
+
+**Lectura:** Medellín concentra 1.246,7 GWh, cerca del 44% de la energía
+vendida por EnerAndes, y un promedio de 79.774 clientes por mes. Los 10
+municipios de la tabla reúnen alrededor del 91% del total vendido, así que el
+mercado está altamente concentrado en el Valle de Aburrá y el Oriente
+antioqueño.
 
 ## 🧪 Pruebas automáticas
 

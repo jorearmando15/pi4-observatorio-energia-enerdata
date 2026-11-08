@@ -1,0 +1,82 @@
+# Pruebas de dbt sobre los modelos de staging.
+# "dbt build" las ejecuta despues de crear cada vista.
+# Es un archivo YAML: no se ejecuta; dbt lo lee para saber que probar.
+
+version: 2
+
+models:
+  # Ventas de EnerAndes 2023-2026 ya limpias y normalizadas.
+  - name: stg_ventas
+    description: "Ventas mensuales de EnerAndes (2023-2026), una fila por mes, municipio, segmento y tipo de compra."
+    columns:
+      - name: periodo
+        data_tests: [not_null]
+      - name: mes_id
+        data_tests: [not_null]
+      - name: fecha_id
+        data_tests: [not_null]
+      - name: fecha
+        data_tests: [not_null]
+      - name: municipio_id
+        data_tests: [not_null]
+      - name: segmento
+        data_tests: [not_null]
+      - name: tipo_compra
+        data_tests: [not_null]
+      - name: energia_kwh
+        data_tests: [not_null]
+
+  # Precio de bolsa horario de XM.
+  - name: stg_xm_precio
+    description: "Precio de bolsa nacional de XM, una fila por dia y hora."
+    columns:
+      - name: fecha_id
+        data_tests: [not_null]
+      - name: hora
+        data_tests: [not_null]
+      - name: precio_cop_kwh
+        data_tests: [not_null]
+
+  # Demanda real horaria del sistema de XM.
+  - name: stg_xm_demanda
+    description: "Demanda real del sistema de XM, una fila por dia y hora."
+    columns:
+      - name: fecha_id
+        data_tests: [not_null]
+      - name: hora
+        data_tests: [not_null]
+      - name: demanda_kwh
+        data_tests: [not_null]
+
+  # Generacion horaria por recurso de XM.
+  - name: stg_xm_generacion
+    description: "Generacion horaria por recurso de XM, una fila por dia, hora y recurso."
+    columns:
+      - name: fecha_id
+        data_tests: [not_null]
+      - name: hora
+        data_tests: [not_null]
+      - name: recurso_id
+        data_tests: [not_null]
+      - name: generacion_kwh
+        data_tests: [not_null]
+
+  # Catalogo de recursos (plantas) de XM.
+  - name: stg_listado_recursos
+    description: "Catalogo de recursos de XM, una fila por recurso (planta)."
+    columns:
+      - name: recurso_id
+        data_tests: [unique, not_null]
+      - name: nombre
+        data_tests: [not_null]
+
+  # Indice ONI de NOAA por mes.
+  - name: stg_oni_mensual
+    description: "Indice ONI de NOAA, una fila por mes, con su fase ENSO."
+    columns:
+      - name: anio
+        data_tests: [not_null]
+      - name: mes
+        data_tests: [not_null]
+      - name: fase_enso
+        data_tests: [not_null]

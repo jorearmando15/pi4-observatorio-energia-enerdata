@@ -256,7 +256,7 @@ Los archivos se guardan en `data/sample/`, conservan los encabezados y las colum
 ## 🔎 Perfilamiento de los datos
 
 ```powershell
-python -m src.perfilamiento
+python -m src.perfilar
 ```
 
 Genera `docs/perfilamiento.md` con una tabla por cada archivo de bronce (filas, columnas, tipos de dato, % de nulos, filas duplicadas y rango de fechas) y los hallazgos de calidad con su evidencia numérica.
@@ -272,7 +272,7 @@ Genera `docs/perfilamiento.md` con una tabla por cada archivo de bronce (filas, 
 
 ![Pruebas](docs/img/pytest.png)
 
-**Perfilamiento** (`python src/perfilar.py`):
+**Perfilamiento** (`python -m src.perfilar`):
 
 ![Perfilamiento](docs/img/perfilar.png)
 

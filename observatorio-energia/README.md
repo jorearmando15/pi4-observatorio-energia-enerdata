@@ -9,7 +9,7 @@
 |---|---|---|
 | Jorge Rodriguez | @jorgerodriguezdev | Líder técnico / Data Engineer |
 | Yusep Ruiz | @yusepruiz | Data Quality Analyst |
-| Lina Johana Seguro | @LinaSeguro | Analytics Engineer |
+| Lina Johana Seguro | @LinaSeguro | BI Analyst |
 | Raúl Niño | @Buclex | Analytics Engineer |
 
 ## 🎯 Objetivo

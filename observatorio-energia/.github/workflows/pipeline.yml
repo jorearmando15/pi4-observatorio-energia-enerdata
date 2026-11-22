@@ -28,8 +28,11 @@ jobs:
     # runs-on: el computador donde corre. ubuntu-latest es un Linux nuevo y vacio
     # que GitHub presta para esta ejecucion y borra al terminar
     runs-on: ubuntu-latest
-    # Si algo se queda pegado (una API que no responde), GitHub lo cancela a los 30 minutos
-    timeout-minutes: 30
+    # Permite suficiente tiempo para la extraccion de todas las fuentes
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: observatorio-energia
     # steps: los pasos del trabajo, en orden. Cada paso empieza con "-".
     # Si un paso falla, los siguientes no se ejecutan
     steps:
@@ -50,6 +53,7 @@ jobs:
           python-version: "3.11"
           # Guarda las librerias descargadas: desde la segunda vez, instala mas rapido
           cache: pip
+          cache-dependency-path: observatorio-energia/requirements.txt
 
 
       # Paso 3: instalar las librerias del proyecto
@@ -65,7 +69,7 @@ jobs:
 
       # Paso 5: capa plata. Limpia la hoja 2023 y la valida con pandera
       - name: Capa plata (limpieza y pandera)
-        run: python -m src.silver.enerandes
+        run: python -m src.silver.pipeline
 
 
       # Paso 6: capa oro. Crea el esquema estrella y ejecuta las pruebas de dbt

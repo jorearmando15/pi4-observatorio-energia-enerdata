@@ -14,7 +14,20 @@ Uso:
 import duckdb           # duckdb: para crear una base de datos de ejemplo
 import pandas as pd     # pandas: para leer los Parquet que crea la exportacion
 
-from src.exportar_oro import exportar   # la funcion que se va a probar
+from src.exportar_oro import TABLAS_ORO, exportar   # la funcion que se va a probar
+
+
+def test_lista_exportacion_contiene_todas_las_tablas_oro():
+    assert TABLAS_ORO == [
+        "dim_fecha",
+        "dim_mes",
+        "dim_municipio",
+        "dim_recurso",
+        "dim_segmento",
+        "fact_generacion_recurso",
+        "fact_mercado_horario",
+        "fact_ventas_mensual",
+    ]
 
 
 # ---------------------------------------------------------------------------

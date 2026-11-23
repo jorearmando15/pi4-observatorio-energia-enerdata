@@ -1,19 +1,15 @@
--- Tabla de HECHOS: el mercado horario de energia.
--- Grano: un dia y una hora.
---
--- Junta las dos series horarias de XM en la misma fila:
---   - precio de bolsa (COP/kWh)
---   - demanda real del sistema (kWh)
+-- Tabla de HECHOS: precio y demanda, UNA HORA por fila (rango de la clase).
+-- Responde: P4 (patrones de demanda por hora, dia de la semana y mes; hora pico).
 
 select
-    -- Llave a dim_fecha.
-    p.fecha_id,
-    -- La hora es una dimension degenerada: 1, 2, ..., 24.
-    p.hora,
-    -- Las MEDIDAS.
-    p.precio_cop_kwh,
-    d.demanda_kwh
-from {{ ref('stg_xm_precio') }} as p
-join {{ ref('stg_xm_demanda') }} as d
-    on p.fecha_id = d.fecha_id
-   and p.hora = d.hora
+    fecha,
+    hora,
+    -- isodow: dia de la semana, 1 = lunes ... 7 = domingo
+    isodow(fecha)                                as dia_semana,
+    -- El nombre del dia, para mostrarlo en el dashboard
+    ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes',
+     'Sábado', 'Domingo'][isodow(fecha)]         as dia_nombre,
+    cast(date_trunc('month', fecha) as date)     as mes,
+    precio_cop_kwh,
+    demanda_kwh
+from {{ ref('stg_mercado_horario') }}

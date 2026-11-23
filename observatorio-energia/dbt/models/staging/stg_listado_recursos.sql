@@ -31,7 +31,7 @@ with catalogo as (
             partition by upper(trim("Code"))
             order by try_cast("Date" as date) desc
         ) as rn
-    from {{ source('bronce', 'xm_listado_recursos') }}
+    from {{ source('bronce', 'xm_recursos') }}
     where trim("Code") <> ''
 )
 

@@ -1,8 +1,9 @@
 # Bitácora – Yusep Ruiz
 
-**Rol:** Data Quality Analyst  
+**Rol anterior:** Data Quality Analyst  
+**Rol actual:** Data Engineer
 **Puntos a cargo:** 1 (equipo y repositorio, en conjunto) y 2 (pruebas unitarias, integración de la extracción, idempotencia del pipeline y perfilamiento de datos)  
-**Actividad actual:** Punto 1 (esquema estrella en dbt) y Punto 2 (documentación del modelo dimensional, diccionario de datos y consultas de negocio)
+**Actividad EA3:** Dashboard en Streamlit (pregunta propia #6), pruebas del dashboard y actualización de documentación del README con trazabilidad EA1–EA3.
 
 ## Registro de actividades
 
@@ -21,6 +22,16 @@
 | **Punto 1 (2026-11-05).** Documenté el grano de cada hecho en `dbt/models/marts/schema.yml` y agregué las pruebas de integridad del modelo. | Grano documentado: ventas = un mes + municipio + segmento + tipo de compra; mercado = un día + hora; generación = un día + hora + recurso. Pruebas `unique` y `not_null` en las llaves de las 5 dimensiones, `relationships` en las llaves de los 3 hechos y pruebas singulares de unicidad del grano compuesto y de cobertura 2023–2026. | No está instalado `dbt_utils`, por eso escribí las pruebas del grano compuesto como pruebas singulares en `dbt/tests/` en lugar de usar `dbt_utils.unique_combination_of_columns`. Validación final: `dbt build` terminó con `PASS=76 WARN=0 ERROR=0 SKIP=0`. |
 | **Punto 2 (2026-11-06).** Creé la documentación del modelo en `docs/modelo_dimensional.md` y el diccionario de datos en `docs/diccionario_datos.md` (Commit `8a478f4`). | Diagrama Mermaid del esquema estrella con las 8 tablas de oro, explicación del grano de los 3 hechos, reglas de integridad y linaje resumido. Diccionario con una tabla por cada tabla oro (columna, tipo de dato, descripción y origen), contrastado contra los tipos reales de DuckDB: 43 columnas en total. | Verifiqué columna por columna que el diccionario coincidiera con `describe` de DuckDB, para que la documentación no quedara desactualizada frente al modelo construido. |
 | **Punto 2 (2026-11-06).** Creé 4 consultas de negocio en `consultas/oro/` y publiqué sus resultados en el `README.md` (Commit `e3cef71`). | `01_impacto_enso_precio_demanda.sql` (precio promedio 661 COP/kWh en El Niño vs. 414 en Neutral y 223 en La Niña), `02_matriz_generacion_por_tipo.sql` (hidráulica 81,5% en 2025 y 72,2% en 2026 ene–sep), `03_perfil_horario_demanda_precio.sql` (demanda máxima en las horas 19–21 y precio máximo en la hora 20) y `04_ventas_por_municipio.sql` (Medellín concentra cerca del 44% de la energía vendida). | Las consultas se ejecutan en modo solo lectura sobre `data/observatorio.duckdb`. En ventas por municipio corregí el conteo de clientes: como el hecho trae un conteo mensual, se promedia entre meses en lugar de sumarlo, para no contar varias veces al mismo cliente. Validación final en solo lectura: 67/67 chequeos PASS. |
+
+### Actividad EA3 - Dashboard y cierre
+
+**Puntos a cargo (EA3):** 4 (construcción del dashboard) y 6 (completar la documentación).
+
+| Qué hice | Resultado | Dificultades y aprendizajes |
+|---|---|---|
+| **Punto 4.** Construí y ajusté el dashboard en Streamlit sobre la capa oro (`dashboard/app.py` y `dashboard/datos.py`), con 6 pestañas/KPIs que responden las 6 preguntas de negocio, incluida la pregunta propia #6. | Dashboard en `dashboard/` con filtros por años y por fase ENSO, municipio y segmento; la pregunta propia integra `fact_generacion_mensual` y `fact_mercado_mensual` con serie ENSO, box plot con puntos/n, dispersión con regresión/R², tabla mensual, ejes 0–100 y advertencias de muestra. | La muestra de La Niña es pequeña (3 meses), por lo que los KPIs comparan El Niño vs. fuera de El Niño (Neutral + La Niña) y se dejaron advertencias. También se corrigió un error de Vega/Altair en la tendencia codificando `x` y `y` en `transform_regression`. |
+| **Punto 4.** Creé pruebas para los cálculos del dashboard en `tests/test_dashboard.py`. | Cobertura de la lógica de la pregunta propia (transformación de tipos, `Sin dato`, resumen por fase, correlaciones, intervalos ENSO, detalle mensual y ajuste lineal); validación local con `pytest tests/test_dashboard.py -q` (8 passed) y smoke test con `AppTest`. | Las pruebas se enfocaron en los cálculos de datos, no en el render visual completo, para detectar regresiones rápido sin depender del navegador. |
+| **Punto 6.** Actualicé `observatorio-energia/README.md` para cumplir la plantilla del Anexo A, sin modificar la información previa de EA1/EA2. | Se agregó un bloque EA3 con integrantes/roles, objetivo, arquitectura, fuentes, cómo ejecutar, calidad de datos, dashboard, hallazgos, uso de IA y limitaciones; se declaró el uso de IA (Claude y OpenCode) y se dejaron 7 espacios comentados para capturas del dashboard en `docs/img/`. | Fue necesario restaurar el README anterior para preservar la trazabilidad: las primeras 306 líneas quedaron idénticas a `HEAD` y el cambio fue aditivo. También se cambió el diagrama Mermaid a ASCII (`text`) para evitar que se vieran etiquetas `<br/>` en visores sin soporte Mermaid. |
 
 ## Pull Requests propios
 - **PR #39:** `Yusepruiz feature/plata oro` — modelo estrella, documentación y consultas de la capa oro (Merged a `main`, 2026-11-07).

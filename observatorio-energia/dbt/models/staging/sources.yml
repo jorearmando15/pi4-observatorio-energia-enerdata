@@ -17,15 +17,23 @@ sources:
       # {name} se reemplaza por el nombre de la tabla.
       external_location: "data/bronze/{name}.parquet"
     tables:
+      # EnerAndes: ventas 2023-2026 (4 hojas del Excel).
       - name: enerandes_ventas_2023
       - name: enerandes_ventas_2024
       - name: enerandes_ventas_2025
       - name: enerandes_ventas_2026
-      - name: xm_precio_bolsa
-      - name: xm_demanda
-      - name: xm_generacion
-      - name: xm_listado_recursos
-      - name: noaa_oni
+      # XM: series de mercado, generacion, hidrologia y catalogo.
+      - name: xm_precio_bolsa      # precio de bolsa, por hora
+      - name: xm_demanda           # demanda real, por hora
+      - name: xm_embalses          # volumen util de los embalses, por dia (fraccion de 0 a 1)
+      - name: xm_precio_bolsa_diario  # precio de bolsa del dia, ponderado (COP/kWh)
+      - name: xm_precio_contrato   # precio promedio de los contratos, por dia (COP/kWh)
+      - name: xm_aportes           # agua que llega a los embalses, por dia (kWh)
+      - name: xm_aportes_media     # lo que llega en promedio historico, por dia (kWh)
+      - name: xm_generacion        # generacion de cada planta, por hora (kWh)
+      - name: xm_recursos          # catalogo de plantas: nombre, tipo, estado y fuente
+      # NOAA: indice ONI de El Nino.
+      - name: noaa_oni             # el indice ONI de El Nino, por trimestre movil
 
   - name: plata
     description: "Capa plata: ventas de EnerAndes limpias (por ahora solo la hoja 2023)."

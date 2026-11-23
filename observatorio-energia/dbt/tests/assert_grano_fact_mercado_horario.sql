@@ -3,9 +3,9 @@
 -- Si esta consulta devuelve filas, hay pares fecha-hora repetidos.
 
 select
-    fecha_id,
+    fecha,
     hora,
     count(*) as filas
 from {{ ref('fact_mercado_horario') }}
-group by fecha_id, hora
+group by fecha, hora
 having count(*) > 1

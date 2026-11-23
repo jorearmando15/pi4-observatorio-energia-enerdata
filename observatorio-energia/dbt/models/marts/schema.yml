@@ -119,16 +119,22 @@ models:
       Grano: un dia y una hora (una fila por cada par fecha-hora; 24 filas por dia).
     columns:
       # Llave a la fecha.
-      - name: fecha_id
+      - name: fecha
         data_tests:
           - not_null
           - relationships:
               arguments:
                 to: ref('dim_fecha')
-                field: fecha_id
-      # La hora es parte del grano.
+                field: fecha
+      # La hora es parte del grano: va de 0 a 23 y nunca esta vacia.
       - name: hora
-        data_tests: [not_null]
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23]
+                # quote: false = los valores son numeros, no textos
+                quote: false
       # Medidas.
       - name: precio_cop_kwh
         data_tests: [not_null]
@@ -161,4 +167,32 @@ models:
                 field: recurso_id
       # Medida.
       - name: generacion_kwh
+        data_tests: [not_null]
+  # --- Las tablas del mercado y el clima (semana 7) -------------------------
+  # El mercado y el clima por mes
+  - name: fact_mercado_mensual
+    description: "Embalses, aportes, precio de bolsa y ONI. Grano: un mes."
+    columns:
+      # La llave del mes: no se repite y nunca esta vacia
+      - name: mes_id
+        data_tests: [unique, not_null]
+      # Todos los meses deben tener el nivel de los embalses
+      - name: embalses_pct
+        data_tests: [not_null]
+      # Solo se aceptan las 3 fases
+      - name: fase_enso
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ["El Niño", "La Niña", "Neutral"]
+
+
+  # La generacion por tipo de planta y mes
+  - name: fact_generacion_mensual
+    description: "Generacion por tipo de planta. Grano: un mes y un tipo."
+    columns:
+      # El tipo y la energia nunca estan vacios
+      - name: tipo
+        data_tests: [not_null]
+      - name: energia_gwh
         data_tests: [not_null]

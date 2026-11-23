@@ -29,20 +29,36 @@ DIR_DOCS = RAIZ / "docs"                    # documentacion: perfilamiento, repo
 # --- Fuente 1: API de XM (mercado electrico) -------------------------------
 XM_URL = "https://servapibi.xm.com.co/{periodo}"   # periodo: hourly | daily | lists
 XM_MAX_DIAS = 30                                    # la API no acepta rangos mas largos
+# Historia desde 2015 para los embalses: para comparar 2026 con El Nino
+# 2015-2016 y 2023-2024 (pregunta 1). Es una metrica DIARIA: rapida.
+FECHA_HISTORIA = date(2015, 1, 1)
+# Desde 2023 para los precios diarios y los aportes: 2023 es el ano de las
+# ventas de EnerAndes (pregunta 5) y alli empieza El Nino 2023-2024.
+FECHA_PRECIO = date(2023, 1, 1)
 XM_METRICAS = [
-    # Lista de tuplas. Cada tupla es una metrica a descargar:
-    # (MetricId, Entity, periodo, nombre del archivo en bronce)
-    ("PrecBolsNaci", "Sistema", "hourly", "xm_precio_bolsa"),   # precio de bolsa por hora
-    ("DemaReal", "Sistema", "hourly", "xm_demanda"),            # demanda real por hora
-    ("PorcVoluUtilDiar", "Sistema", "daily", "xm_embalses"),    # % de embalses por dia
-    ("Gene", "Recurso", "hourly", "xm_generacion"),             # generacion por planta
-    ("AporEner", "Sistema", "daily", "xm_aportes"),             # aportes hidricos
+    # (MetricId, Entity, periodo, nombre del archivo en bronce, desde que fecha)
+    # --- Por HORA: solo el rango de la clase (son las mas pesadas) ---
+    ("PrecBolsNaci", "Sistema", "hourly", "xm_precio_bolsa", FECHA_INICIO),
+    ("DemaReal", "Sistema", "hourly", "xm_demanda", FECHA_INICIO),
+    # Generacion de cada planta, hora por hora (pregunta 3): unas 16.000 filas por mes
+    ("Gene", "Recurso", "hourly", "xm_generacion", FECHA_INICIO),
+    # --- Por DIA: una sola fila por dia, rapidas ---
+    ("PorcVoluUtilDiar", "Sistema", "daily", "xm_embalses", FECHA_HISTORIA),
+    # Precio de bolsa del dia, ponderado por la demanda de cada hora
+    ("PPPrecBolsNaci", "Sistema", "daily", "xm_precio_bolsa_diario", FECHA_PRECIO),
+    # Precio promedio de los CONTRATOS: lo que se paga si se compra por contrato
+    ("PrecPromCont", "Sistema", "daily", "xm_precio_contrato", FECHA_PRECIO),
+    # Aportes hidricos: el agua que llega a los embalses (en energia, kWh)...
+    ("AporEner", "Sistema", "daily", "xm_aportes", FECHA_PRECIO),
+    # ...y lo que llega en promedio historico ese dia: aportes / media = % de lo normal
+    ("AporEnerMediHist", "Sistema", "daily", "xm_aportes_media", FECHA_PRECIO),
 ]
+
 
 # Catalogos: endpoint "lists", sin ventana de fechas y con otra estructura (ListEntities).
 # (MetricId, Entity, nombre del archivo en bronce)
-XM_LISTADOS = [
-    ("ListadoRecursos", "Sistema", "xm_listado_recursos"),
+XM_LISTAS = [
+    ("ListadoRecursos", "Sistema", "xm_recursos"),
 ]
 
 # --- Fuente 2: IDEAM en datos.gov.co (API Socrata / SoQL) ------------------

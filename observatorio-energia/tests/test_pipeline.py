@@ -33,6 +33,7 @@ class TestPipelineIdempotencia:
                     entidad="Sistema",
                     periodo="hourly",
                     nombre="xm_test",
+                    desde=date(2026, 1, 1),
                     forzar=False,
                 )
                 # No debe haberse llamado a la API
@@ -72,6 +73,7 @@ class TestPipelineIdempotencia:
                     entidad="Sistema",
                     periodo="hourly",
                     nombre="xm_nueva",
+                    desde=date(2026, 1, 1),
                     forzar=False,
                 )
                 mock_http.assert_called_once()
@@ -116,6 +118,7 @@ class TestPipelineIdempotencia:
                     entidad="Sistema",
                     periodo="hourly",
                     nombre="xm_existente",
+                    desde=date(2026, 1, 1),
                     forzar=True,
                 )
                 mock_http.assert_called_once()

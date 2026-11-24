@@ -35,6 +35,20 @@ def aplanar(respuesta: dict, periodo: str) -> list:
                 filas.append({"Date": item["Date"], "Id": entidad["Id"], "Value": entidad["Value"]})
     return filas
 
+def aplanar_listado(respuesta: dict) -> list:
+    """Aplana la respuesta de un catalogo: Items -> ListEntities -> Values."""
+    filas = []
+    for item in respuesta.get("Items", []):
+        for entidad in item.get("ListEntities", []):
+            fila = {}
+            if "Date" in item:
+                fila["Date"] = item["Date"]
+            if "Id" in entidad:
+                fila["Id"] = entidad["Id"]
+            fila.update(entidad.get("Values", {}))
+            filas.append(fila)
+    return filas
+
 
 def extraer_metrica(metrica: str, entidad: str, periodo: str, nombre: str, desde, forzar: bool) -> None:
     """Descarga una metrica de XM desde la fecha 'desde' hasta FECHA_FIN, por ventanas de 30 dias."""

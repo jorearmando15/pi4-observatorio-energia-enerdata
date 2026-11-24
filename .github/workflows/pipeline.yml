@@ -1,3 +1,4 @@
+
 # Workflow de GitHub Actions: ejecuta el pipeline completo en una maquina de GitHub.
 # Es un archivo YAML: no se ejecuta en el computador; GitHub lo lee y sigue los pasos.
 # Cada linea es "nombre: valor"; lo que tiene 2 espacios mas pertenece a la linea de arriba.
@@ -28,8 +29,14 @@ jobs:
     # runs-on: el computador donde corre. ubuntu-latest es un Linux nuevo y vacio
     # que GitHub presta para esta ejecucion y borra al terminar
     runs-on: ubuntu-latest
-    # Si algo se queda pegado (una API que no responde), GitHub lo cancela a los 30 minutos
+    # Si algo se queda pegado (una API no responde), GitHub lo cancela a los 30 minutos
     timeout-minutes: 30
+
+    # Directorio donde se encuentra el proyecto
+    defaults:
+      run:
+        working-directory: observatorio-energia
+
     # steps: los pasos del trabajo, en orden. Cada paso empieza con "-".
     # Si un paso falla, los siguientes no se ejecutan
     steps:
@@ -50,6 +57,7 @@ jobs:
           python-version: "3.11"
           # Guarda las librerias descargadas: desde la segunda vez, instala mas rapido
           cache: pip
+          cache-dependency-path: observatorio-energia/requirements.txt
 
 
       # Paso 3: instalar las librerias del proyecto
@@ -63,9 +71,9 @@ jobs:
         run: python -m src.pipeline
 
 
-      # Paso 5: capa plata. Limpia la hoja 2023 y la valida con pandera
+      # Paso 5: ejecutar todas las limpiezas de la capa plata
       - name: Capa plata (limpieza y pandera)
-        run: python -m src.silver.enerandes
+        run: python -m src.silver.pipeline
 
 
       # Paso 6: capa oro. Crea el esquema estrella y ejecuta las pruebas de dbt
@@ -91,6 +99,6 @@ jobs:
           # El nombre del .zip: capa-oro
           name: capa-oro
           # La carpeta que se guarda
-          path: data/gold/
+          path: observatorio-energia/data/gold/
           # Cuantos dias guarda GitHub el artefacto antes de borrarlo
           retention-days: 7

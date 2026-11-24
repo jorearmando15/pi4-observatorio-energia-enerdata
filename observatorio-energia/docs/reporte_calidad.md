@@ -22,7 +22,7 @@ Reporte generado por `python -m src.silver.pipeline` a partir de los Parquet de 
 | `xm_generacion` | 350361 | 8408664 | 0 |
 | `xm_embalses` | 1004 | 1004 | 0 |
 | `xm_aportes` | 1004 | 1004 | 0 |
-| `xm_listado_recursos` | 2502 | 2498 | 2 |
+| `xm_listado_recursos` | 2493 | 2491 | 0 |
 
 ### IDEAM
 
@@ -35,7 +35,7 @@ Reporte generado por `python -m src.silver.pipeline` a partir de los Parquet de 
 
 | Conjunto | Filas antes (bronce) | Filas después (plata) | Filas en cuarentena |
 |---|---:|---:|---:|
-| `noaa_oni` | 921 | 921 | 0 |
+| `noaa_oni` | 920 | 920 | 0 |
 
 ### TRM
 
@@ -94,7 +94,7 @@ Los valores de las columnas antes/después son filas que incumplen la regla. En 
 | `xm_aportes` | Clave fecha/identificador única | 0 | 0 | 0 |
 | `xm_listado_recursos` | Código y nombre no vacíos | 0 | 0 | 0 |
 | `xm_listado_recursos` | Fechas del catálogo interpretables | 0 | 0 | 0 |
-| `xm_listado_recursos` | Código de recurso único | 6 | 0 | 2 |
+| `xm_listado_recursos` | Código de recurso único | 4 | 0 | 0 |
 
 ### IDEAM
 
@@ -141,7 +141,7 @@ Los valores de las columnas antes/después son filas que incumplen la regla. En 
 |---|---|---|---:|
 | EnerAndes | `enerandes_cuarentena` | energía vacía o no numérica | 25 |
 | EnerAndes | `enerandes_cuarentena` | energía negativa | 18 |
-| XM | `xm_listado_recursos_cuarentena` | codigo duplicado con descripciones distintas | 2 |
+| XM | `xm_listado_recursos_cuarentena` | Sin filas enviadas | 0 |
 
 IDEAM, NOAA y TRM no generan una tabla de cuarentena: las validaciones incompatibles detienen la ejecución en vez de apartar filas.
 

@@ -30,6 +30,11 @@ jobs:
     runs-on: ubuntu-latest
     # Si algo se queda pegado (una API que no responde), GitHub lo cancela a los 30 minutos
     timeout-minutes: 30
+
+    defaults:
+      run:
+        working-directory: observatorio-energia
+
     # steps: los pasos del trabajo, en orden. Cada paso empieza con "-".
     # Si un paso falla, los siguientes no se ejecutan
     steps:
@@ -50,6 +55,7 @@ jobs:
           python-version: "3.11"
           # Guarda las librerias descargadas: desde la segunda vez, instala mas rapido
           cache: pip
+          cache-dependency-path: observatorio-energia/requirements.txt
 
 
       # Paso 3: instalar las librerias del proyecto
@@ -91,6 +97,6 @@ jobs:
           # El nombre del .zip: capa-oro
           name: capa-oro
           # La carpeta que se guarda
-          path: data/gold/
+          path: observatorio-energia/data/gold/
           # Cuantos dias guarda GitHub el artefacto antes de borrarlo
           retention-days: 7

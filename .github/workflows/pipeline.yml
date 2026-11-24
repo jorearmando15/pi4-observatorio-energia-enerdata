@@ -29,7 +29,7 @@ jobs:
     # que GitHub presta para esta ejecucion y borra al terminar
     runs-on: ubuntu-latest
     # Si algo se queda pegado (una API que no responde), GitHub lo cancela a los 30 minutos
-    timeout-minutes: 30
+    timeout-minutes: 90
 
     defaults:
       run:
@@ -62,6 +62,16 @@ jobs:
       - name: Instalar librerias
         # run: ejecuta un comando, igual que en la terminal
         run: pip install -r requirements.txt
+
+
+      # Caché de la capa bronce: restaura lo ya descargado en corridas anteriores
+      - name: Caché de la capa bronce
+        uses: actions/cache@v4
+        with:
+          path: observatorio-energia/data/bronze
+          key: bronce-${{ github.run_id }}
+          restore-keys: bronce-
+
 
 
       # Paso 4: capa bronce. Descarga XM, IDEAM y NOAA, y lee el Excel de EnerAndes

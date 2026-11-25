@@ -29,7 +29,12 @@ jobs:
     # que GitHub presta para esta ejecucion y borra al terminar
     runs-on: ubuntu-latest
     # Si algo se queda pegado (una API que no responde), GitHub lo cancela a los 30 minutos
-    timeout-minutes: 30
+    timeout-minutes: 90
+
+    defaults:
+      run:
+        working-directory: observatorio-energia
+
     # steps: los pasos del trabajo, en orden. Cada paso empieza con "-".
     # Si un paso falla, los siguientes no se ejecutan
     steps:
@@ -50,12 +55,23 @@ jobs:
           python-version: "3.11"
           # Guarda las librerias descargadas: desde la segunda vez, instala mas rapido
           cache: pip
+          cache-dependency-path: observatorio-energia/requirements.txt
 
 
       # Paso 3: instalar las librerias del proyecto
       - name: Instalar librerias
         # run: ejecuta un comando, igual que en la terminal
         run: pip install -r requirements.txt
+
+
+      # Caché de la capa bronce: restaura lo ya descargado en corridas anteriores
+      - name: Caché de la capa bronce
+        uses: actions/cache@v4
+        with:
+          path: observatorio-energia/data/bronze
+          key: bronce-${{ github.run_id }}
+          restore-keys: bronce-
+
 
 
       # Paso 4: capa bronce. Descarga XM, IDEAM y NOAA, y lee el Excel de EnerAndes
@@ -91,6 +107,6 @@ jobs:
           # El nombre del .zip: capa-oro
           name: capa-oro
           # La carpeta que se guarda
-          path: data/gold/
+          path: observatorio-energia/data/gold/
           # Cuantos dias guarda GitHub el artefacto antes de borrarlo
           retention-days: 7

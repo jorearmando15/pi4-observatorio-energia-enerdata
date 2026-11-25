@@ -6,8 +6,7 @@ Cubre:
   - aplanar_listado(): aplana respuestas del endpoint "lists" (catalogos)
 """
 
-from src.extract.xm import aplanar, aplanar_listado
-
+from src.extract.xm import aplanar
 
 # ---------------------------------------------------------------------------
 # aplanar()  — datos hourly
@@ -154,25 +153,25 @@ class TestAplanarListado:
 
     def test_devuelve_lista_no_vacia(self):
         """aplanar_listado() debe devolver al menos una fila con datos reales."""
-        filas = aplanar_listado(self._respuesta_listado())
+        filas = aplanar(self._respuesta_listado(), "lists")
         assert isinstance(filas, list)
         assert len(filas) > 0
 
     def test_fila_contiene_id_y_values(self):
         """Cada fila debe incluir 'Id' y los campos de 'Values' desempacados."""
-        filas = aplanar_listado(self._respuesta_listado())
+        filas = aplanar(self._respuesta_listado(), "lists")
         assert filas[0]["Id"] == "BETANIA"
         assert filas[0]["Tipo"] == "Hidro"
         assert filas[0]["Capacidad"] == 540.0
 
     def test_numero_de_filas_correcto(self):
         """Con 2 entidades en un item, se generan 2 filas."""
-        filas = aplanar_listado(self._respuesta_listado())
+        filas = aplanar(self._respuesta_listado(), "lists")
         assert len(filas) == 2
 
     def test_sin_items_devuelve_lista_vacia(self):
         """Si no hay 'Items', devuelve lista vacía sin lanzar excepción."""
-        assert aplanar_listado({}) == []
+        assert aplanar({}, "lists") == []
 
     def test_item_sin_date_no_falla(self):
         """Si el item no trae 'Date', la función igual produce la fila sin ese campo."""
@@ -186,7 +185,7 @@ class TestAplanarListado:
                 }
             ]
         }
-        filas = aplanar_listado(respuesta)
+        filas = aplanar(respuesta, "lists")
         assert len(filas) == 1
         assert "Date" not in filas[0]
         assert filas[0]["Id"] == "GUATRON"

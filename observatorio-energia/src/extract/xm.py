@@ -28,7 +28,11 @@ def aplanar(respuesta: dict, periodo: str) -> list:
         elif periodo == "lists":
             # Las listas traen los atributos en "Values": una fila por elemento
             for entidad in item["ListEntities"]:
-                filas.append({"Date": item["Date"], "Id": entidad["Id"], **entidad["Values"]})
+                fila = {"Id": entidad["Id"], **entidad["Values"]}
+                # Los catalogos no siempre traen fecha: solo se agrega si existe
+                if "Date" in item:
+                    fila["Date"] = item["Date"]
+                filas.append(fila)
         else:
             # Por dia: un solo valor, en "Value"
             for entidad in item["DailyEntities"]:

@@ -8,7 +8,7 @@ import pytest
 import yaml
 
 # tests/ -> observatorio-energia/ -> raiz del repositorio
-RAIZ_PROYECTO = Path(_file_).resolve().parents[1]
+RAIZ_PROYECTO = Path(__file__).resolve().parents[1]
 RAIZ_REPO = RAIZ_PROYECTO.parent
 WORKFLOW = RAIZ_REPO / ".github" / "workflows" / "pipeline.yml"
 
@@ -35,7 +35,7 @@ def test_workflow_corre_a_diario_y_a_mano(workflow):
     campos = disparadores["schedule"][0]["cron"].split()
     assert len(campos) == 5
     # dia del mes, mes y dia de la semana en "*" = todos los dias
-    assert campos[2:] == ["", "", "*"]
+    assert campos[2:] == ["*", "*", "*"]
 
 
 def test_workflow_ejecuta_el_pipeline_completo_en_orden(workflow):

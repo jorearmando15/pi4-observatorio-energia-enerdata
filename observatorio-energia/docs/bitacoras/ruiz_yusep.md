@@ -40,6 +40,7 @@
 - **PR #19:** `doc: añadir pantallazo de perfilamiento de datos` (Merged a `main`, 2026-10-25).
 - **PR #16:** `Rama yusepruiz dataqualityanalyst - Creación del perfilamiento de la información` (Merged a `main`, 2026-10-24).
 - **PR #15:** `test: añadir pruebas unitarias y de integración para la extracción de datos y la idempotencia del pipeline` (Merged a `main`, 2026-10-24).
+- **PR #59:** `feat: Incorporar el dashboard en Streamlit` (Merged a `main`, 2026-11-23)
 
 ## Pull Requests que revisé y aprobé
 - **PR #12:** `feat: issue Mantener fuentes NOAA y EnerAndes realizada` de `@Buclex` (Aprobado, 2026-10-24; revisión técnica de calidad y merge completado).

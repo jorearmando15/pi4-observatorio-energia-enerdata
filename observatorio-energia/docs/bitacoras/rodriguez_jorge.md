@@ -38,6 +38,8 @@
 - **PR #56:** `feature/jorge_rodriguez_automatizacion`, pipeline automático con GitHub Actions y exportación de la capa oro (integrado por @LinaSeguro).
 - **PR #61:** `feature/jorge_rodriguez_automatizacion`, Agregar workflow de GitHub Actions y corregir tests (integrado por @LinaSeguro).
 - **PR #64:** `feature/jorge_rodriguez_automatizacion`, docs: actualizar readme y bitacora de Jorge Rodriguez(integrado por @LinaSeguro).
+- **PR #65:** `feature/jorge_rodriguez_automatizacion`, docs: actualizar README (pruebas, automatizacion, uso de IA y rutas de imagenes).
+
 
 
 ## Pull Requests que revisé e integré (Merges a main)

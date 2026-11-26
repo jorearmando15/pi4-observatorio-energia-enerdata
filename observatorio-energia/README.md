@@ -540,7 +540,7 @@ poder probarlos con pytest sin abrir la página.
 | 4 | Demanda | `docs/img/dashboard_04_demanda.png` |
 | 5 | Impacto en el negocio | `docs/img/dashboard_05_negocio.png` |
 | 6 | Pregunta propia | `docs/img/dashboard_06_pregunta_propia.png` |
-| 7 | Pregunta propia | `docs/img/dashboard_06_pregunta_propia_02.png` |
+| 7 | Pregunta propia | `docs/img/dashboard_06_pregunta_propia_01.png` |
 
 #### 1. Riesgo hídrico
 

@@ -7,7 +7,7 @@
 
 | Nombre | Usuario GitHub | Rol |
 |---|---|---|
-| Jorge Rodriguez | @jorgerodriguezdev | Líder técnico / Data Engineer |
+| Jorge Rodriguez | @jorgerodriguezdev | Data Quality Analyst |
 | Yusep Ruiz | @yusepruiz | Data Engineer |
 | Lina Johana Seguro | @LinaSeguro | BI Analyst |
 | Raúl Niño | @Buclex | Analytics Engineer |
@@ -250,8 +250,22 @@ antioqueño.
 ```powershell
 python -m pytest
 ```
+Las pruebas usan una red simulada, así que no dependen de internet. Se ejecutan en cada corrida del workflow de GitHub Actions (paso "Pruebas (pytest)"), y todas deben pasar.
 
-Verifican, entre otras cosas, que `ventanas()` parta bien un rango de fechas, que `aplanar()` y `aplanar_listado()` conviertan bien un JSON de ejemplo, que la consulta SoQL del IDEAM agregue en el servidor y que el pipeline omita los archivos que ya existen. Usan una red simulada, así que no dependen de internet.
+**EA1 y EA2**
+
+- `tests/test_utils.py`: `ventanas()` parte bien un rango de fechas y `ya_existe()` respeta `--forzar`.
+- `tests/test_xm.py`: `aplanar()` convierte bien el JSON de XM de ejemplo, incluidas las respuestas por hora, por día y las listas (`aplanar(respuesta, "lists")`).
+- `tests/test_pipeline.py`: el pipeline omite los archivos que ya existen en bronce.
+- `tests/test_plata.py` y `tests/test_limpieza.py`: reglas de limpieza y validación con Pandera.
+- Pruebas de los extractores de NOAA, EnerAndes y TRM, y de `src.transformar`.
+
+**EA3**
+
+- `tests/test_workflow.py` (4 pruebas nuevas): el workflow corre todos los días (`schedule` con `cron`) y a mano (`workflow_dispatch`); ejecuta bronce, plata, `dbt build`, `pytest` y la exportación en ese orden; publica `data/gold/` como artefacto con `actions/upload-artifact`; y `.env` está en `.gitignore` sin claves escritas en el YAML.
+- `tests/test_exportar_oro.py`: la exportación de la capa oro genera un Parquet por tabla.
+- `tests/test_dashboard.py`: los cálculos del dashboard (matriz por fase ENSO, correlación con el ONI, ajuste lineal, detalle mensual) devuelven los resultados esperados con datos de ejemplo.
+
 
 ## 🗂️ Muestras de los datos
 
@@ -275,8 +289,7 @@ Genera `docs/perfilamiento.md` con una tabla por cada archivo de bronce (filas, 
 
 **Pipeline completo** (`python -m src.pipeline`):
 
-![Pipeline](docs\img\pipeline.png)
-
+![Pipeline](docs/img/pipeline.png)
 
 **Pruebas** (`python -m pytest`):
 
@@ -306,6 +319,8 @@ Fuentes -> BRONCE (dato tal cual + linaje) -> PLATA (limpio) -> ORO (modelo estr
 Se usó Claude (Anthropic) como asistente de programación para escribir y explicar parte del código de los extractores, las pruebas con pytest y los scripts de muestras y perfilamiento. El equipo ejecutó, revisó y probó el código contra las fuentes reales.
 
 Para la entrega **EA3** se usó además **OpenCode** (asistente de IA en el editor) como apoyo para implementar el dashboard en Streamlit, los gráficos de Altair, las pruebas de `tests/test_dashboard.py` y la organización de esta documentación. El equipo ejecutó, revisó y contrastó todo el código y las cifras contra las fuentes reales; la IA no generó datos ni reemplazó las decisiones de análisis.
+
+Para la parte de **automatización de EA3** se usó **Claude (Anthropic)** como apoyo para diseñar el workflow de GitHub Actions (disparadores, `working-directory`, caché de `data/bronze` y artefacto `capa-oro`), depurar los errores de ejecución (rutas, tiempos de espera, tests desactualizados), proponer las pruebas de `tests/test_workflow.py` y redactar partes de la documentación y la bitácora. El equipo ejecutó el workflow en GitHub Actions, revisó cada cambio y validó los resultados; la IA no tomó decisiones de análisis ni generó datos.
 
 ---
 
@@ -363,16 +378,35 @@ resto de tablas queda disponible en DuckDB.
 ### Automatización
 
 El workflow [`.github/workflows/pipeline.yml`](.github/workflows/pipeline.yml)
-ejecuta el proceso en GitHub Actions **todos los días a las 6:00 a. m.
-(Colombia)**, en cada Pull Request hacia `main` y de forma manual:
+se ejecuta en GitHub Actions con tres disparadores:
+
+- **`schedule`**: todos los días a las 6:00 a. m. (Colombia), con `cron: "0 11 * * *"` (11:00 UTC).
+- **`workflow_dispatch`**: manualmente, con el botón **Run workflow** de la pestaña Actions.
+- **`pull_request`**: en cada Pull Request hacia `main`.
+
+Pasos del job:
 
 1. Descarga el repositorio e instala Python 3.11 y las dependencias.
 2. Ejecuta la extracción (bronce).
 3. Limpia y valida con Pandera la hoja de EnerAndes en plata.
 4. Construye y prueba oro con `dbt build`.
-5. Corre `pytest`.
-6. Exporta la capa oro a `data/gold/` y la publica como artefacto `capa-oro`
-   (7 días de retención).
+5. Corre `pytest` (todas las pruebas de `tests/`).
+6. Exporta la capa oro a `data/gold/` en formato Parquet y la publica como
+   artefacto `capa-oro` con `actions/upload-artifact` (7 días de retención).
+
+**Caché:** la carpeta `data/bronze/` se guarda con `actions/cache`. La primera
+ejecución en `main` descarga todo (~50 minutos, casi todo es el IDEAM); las
+siguientes restauran el caché y tardan cerca de 1 minuto.
+
+**Seguridad:** el repositorio no contiene claves. Ninguna de las fuentes (XM,
+IDEAM, NOAA, TRM, EnerAndes) las requiere. Si una fuente la necesitara, se
+guardaría en **GitHub Secrets** (`${{ secrets.NOMBRE }}`) y en un archivo `.env`
+incluido en `.gitignore`.
+
+**Ejecuciones en verde:** la pestaña Actions muestra las ejecuciones exitosas del
+workflow.
+
+![Ejecuciones del workflow en GitHub Actions](docs/img/actions_ejecuciones.png)
 
 ## ⚙️ Cómo ejecutar el dashboard
 
@@ -532,7 +566,7 @@ poder probarlos con pytest sin abrir la página.
 
 ![Pestaña 6 · Pregunta propia](docs/img/dashboard_06_pregunta_propia.png)
 
-![Pestaña 6 · Pregunta propia](docs/img/dashboard_06_pregunta_propia_01.png)
+![Pestaña 6 · Pregunta propia (detalle)](docs/img/dashboard_06_pregunta_propia_01.png)
 
 ## 🔎 Hallazgos principales (EA3)
 
@@ -662,3 +696,4 @@ en un servicio accesible para el jurado.
 | [`docs/diccionario_datos.md`](docs/diccionario_datos.md) | Diccionario columna por columna de las tablas de oro. |
 | [`docs/bitacoras/`](docs/bitacoras/) | Bitácora individual de cada integrante. |
 | [`consultas/oro/`](consultas/oro/) | Consultas SQL de las preguntas de negocio. |
+| [`docs/informe_final.pdf`](docs/informe_final.pdf) | Informe de hallazgos para la gerencia de EnerAndes. |

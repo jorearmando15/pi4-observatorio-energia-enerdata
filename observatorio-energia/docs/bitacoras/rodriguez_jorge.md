@@ -1,12 +1,15 @@
 # Bitácora – Jorge Rodríguez
 
-**Rol:** Data Engineer / Technical Lead  
+**Rol:** Data Quality Analyst (EA3). En las actividades #1 y #2 fui Data Engineer / Technical Lead.
 
 **Actividad #1**
 **Puntos a cargo:** Punto 1 (Estructura inicial del repositorio y gestión del equipo), Punto 2 (Extracción de datos de XM ampliada a 2024-2026, métricas y catálogo de recursos), Punto 9 (Verificación de entregables, cumplimiento de commits/PRs del equipo y etiquetado de la entrega `ea1`)
 
 **Actividad #2**
 **Puntos a cargo:** Punto 2 (limpieza de las demás fuentes en la capa plata) y parte del Punto 3 (esquemas Pandera y pruebas pytest para las fuentes implementadas). También quedan registradas abajo mis contribuciones anteriores a la estructura del repositorio, la extracción de XM y la entrega `ea1`.
+
+**Actividad #3**
+**Puntos a cargo:** Punto 2 (Automatizar el pipeline con GitHub Actions) y revisión e integración de los Pull Requests del equipo relacionados con la automatización.
 
 ## Registro de actividades
 
@@ -21,12 +24,23 @@
 | **Punto 2. Capa plata XM.** Agregué `src/silver/xm.py` para limpiar precio de bolsa, demanda y generación. El programa transforma las columnas `Hour01`-`Hour24` al formato largo con una fila por fecha, hora y entidad/recurso; convierte fecha y valores a tipos adecuados y conserva identificadores/códigos. También normaliza las métricas diarias de embalses y aportes y el catálogo `ListadoRecursos`. | Se generaron en `data/silver/` 24.096 filas para precio, 24.096 para demanda y 8.408.664 para generación, además de embalses, aportes y catálogo. | Pasar de columnas por hora a filas facilita consultas horarias y agregaciones. Las celdas vacías de generación deben conservarse como nulas, no cambiarse a cero porque eso alteraría la medición. |
 | **Punto 2. IDEAM, NOAA y fuente propia.** Agregué `src/silver/ideam.py` para tipar fechas, coordenadas y mediciones de precipitación y temperatura manteniendo el municipio/estación; `src/silver/noaa.py` asigna cada temporada ONI a su mes central y calcula la fase ENSO; `src/silver/trm.py` normaliza la fuente propia TRM y sus fechas de vigencia. | Se generaron tablas plata de precipitación (29.804 filas), temperatura (17.349), ONI mensual (920) y TRM (649). | La asignación al mes central evita atribuir DJF a diciembre. La fase usa los límites exactos solicitados: ONI >= 0,5 El Niño, ONI <= -0,5 La Niña y Neutral entre ambos. |
 | **Parte del Punto 3. Calidad de las fuentes a mi cargo.** Definí en `src/quality/esquemas.py` esquemas Pandera para XM (horarios, embalses, aportes y recursos), IDEAM (precipitación y temperatura), NOAA y TRM. Cada limpiador valida antes de escribir en plata. Añadí pruebas con ejemplos pequeños en `tests/test_plata.py`, incluyendo XM de 24 columnas a filas horarias y umbrales de fase ONI. | Las tablas reales se procesaron y validaron mediante `python -m src.silver.pipeline`. La ejecución de `python -m pytest` terminó con 41 pruebas aprobadas. | Las reglas ejecutables permiten detectar tipos, rangos, categorías o duplicados inválidos antes de que los datos lleguen a consultas analíticas. Las pruebas unitarias mantienen los casos clave reproducibles sin llamar APIs. |
+| **Punto 2 (EA3). Workflow de GitHub Actions.** Creé `.github/workflows/pipeline.yml` con disparadores `schedule` (cron diario a las 11:00 UTC, 6:00 a. m. en Colombia), `workflow_dispatch` y `pull_request` hacia `main`. Ejecuta el pipeline completo: extracción (bronce), limpieza con pandera (plata), `dbt build` (oro), `pytest`, exportación de la capa oro a Parquet y publicación como artefacto `capa-oro` con `actions/upload-artifact`. | El workflow corre en una máquina vacía de GitHub y termina en verde. Publica un artefacto de 252 KB con los 7 Parquet de la capa oro. | El proyecto vive en la subcarpeta `observatorio-energia/`, pero GitHub solo detecta workflows en `.github/workflows/` de la raíz. Moví `.github` a la raíz y usé `defaults.run.working-directory`. Las actions con `uses:` no heredan ese valor, así que `cache-dependency-path` y la ruta del artefacto llevan el prefijo. |
+| **Punto 2 (EA3). Validación previa y corrección de tests.** Validé el YAML con `actionlint` (detectó una clave `path` duplicada) y ejecuté los pasos del workflow en local. Corregí `tests/test_pipeline.py` (nuevo parámetro `desde` en `extraer_metrica`) y `tests/test_xm.py` (`aplanar_listado` pasó a `aplanar(..., "lists")`). Ajusté `aplanar()` para que los catálogos de XM sin campo `Date` no fallen. | `dbt build` quedó en 90 de 90 correctos y `pytest` en 55 pruebas aprobadas antes de subir. | Probar en local atrapó errores que habrían roto el workflow. Las tablas de bronce de XM que dbt esperaba no existían porque no había vuelto a correr la extracción. |
+| **Punto 2 (EA3). Rendimiento.** La primera ejecución tardó más de 90 minutos por la extracción secuencial de XM e IDEAM y se canceló por `timeout-minutes`. Subí el timeout y agregué un caché de `data/bronze` con `actions/cache`. | Una ejecución completa en verde tardó 52 min 39 s. Con el caché de `main`, las ejecuciones #5 y #6 tardaron 51 s y 1 min. | Los cachés de una rama de Pull Request quedan aislados en `refs/pull/N/merge` y `main` no los ve. Hubo que hacer una ejecución en `main` para crear el caché propio. Un re-run reutiliza el `run_id` y no sirve para probarlo. |
+| **Punto 2 (EA3). Seguridad.** Verifiqué que no hay claves en el repositorio y que `.env` está en el `.gitignore` (línea 11). | Ninguna fuente (XM, IDEAM, NOAA, TRM, EnerAndes) requiere clave, así que no se usan GitHub Secrets. | `git ls-files` no muestra ningún `.env` versionado. Si en el futuro hace falta una clave, irá en Secrets y se leerá con `${{ secrets.NOMBRE }}`. |
+| **Revisión del equipo (EA3).** Revisé e integré los Pull Requests de Lina (#55 y #63) y de Yuse (#57), incluidos las 4 pruebas del workflow (`tests/test_workflow.py`) y el ajuste de la validación del cron. | Pruebas del workflow incorporadas a `main`; `pytest` corre dentro de GitHub Actions. | Coordinar en el mismo repositorio los cambios de la automatización y los tests. |
 
 ## Pull Requests propios
 - **PR #10:** `feat(xm): amplia extraccion a 2024-2026 con Gene, AporEner y ListadoRecursos` (Merged a `main`).
 - **PR #34:** `feat(silver): implementar limpieza de XM, IDEAM, NOAA, TRM y pipeline…` (Commit `82b59e6`).
 - **PR #35:** `docs: actualizar README` (Commit `88f70fe`).
 - **PR #45:** `docs: actualizar bitácora con PRs y commits recientes` (En revisión / Merged a `main`).
+- **PR #56:** `feature/jorge_rodriguez_automatizacion`, pipeline automático con GitHub Actions y exportación de la capa oro (integrado por @LinaSeguro).
+- **PR #61:** `feature/jorge_rodriguez_automatizacion`, Agregar workflow de GitHub Actions y corregir tests (integrado por @LinaSeguro).
+- **PR #64:** `feature/jorge_rodriguez_automatizacion`, docs: actualizar readme y bitacora de Jorge Rodriguez(integrado por @LinaSeguro).
+- **PR #65:** `feature/jorge_rodriguez_automatizacion`, docs: actualizar README (pruebas, automatizacion, uso de IA y rutas de imagenes).
+
+
 
 ## Pull Requests que revisé e integré (Merges a main)
 - **PR #13:** `feat(ideam): amplia precipitacion desde 2025 y agrega temperatura...` de `@LinaSeguro` (Commit `9c3711d`).
@@ -39,3 +53,6 @@
 - **PR #37:** `LinaSeguro-feature/plata-oro` de `@LinaSeguro`.
 - **PR #43:** `feat: agregar tablas faltantes (ideam_temperatura_diaria y trm_diaria)` de `@yusepruiz` (`yusepruiz-feature/plata-oro`).
 - **PR #44:** `docs: actualizar comando en el readme para ejecutar el perfilamiento)` de `@yusepruiz` (`yusepruiz-feature/plata-oro`).
+- **PR #55:** `feature/LinaSeguro_automatizacion` de `@LinaSeguro`.
+- **PR #57:** `feature/yusepruiz_automatizacion`, docs: actualizar rol para EA3, de `@yusepruiz`.
+- **PR #63:** `feature/LinaSeguro_automatizacion`, 4 pruebas del workflow (`test_workflow.py`) y corrección de la validación del cron diario, de `@LinaSeguro`.

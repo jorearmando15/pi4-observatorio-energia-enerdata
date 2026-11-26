@@ -7,7 +7,7 @@
 
 | Nombre | Usuario GitHub | Rol |
 |---|---|---|
-| Jorge Rodriguez | @jorgerodriguezdev | Líder técnico / Data Engineer |
+| Jorge Rodriguez | @jorgerodriguezdev | Data Quality Analyst |
 | Yusep Ruiz | @yusepruiz | Data Engineer |
 | Lina Johana Seguro | @LinaSeguro | BI Analyst |
 | Raúl Niño | @Buclex | Analytics Engineer |

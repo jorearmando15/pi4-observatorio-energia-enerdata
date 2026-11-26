@@ -10,6 +10,7 @@ from src.quality.esquemas import (
 from src.silver.enerandes import limpiar as limpiar_enerandes
 from src.silver.ideam import limpiar_precipitacion
 from src.silver.noaa import limpiar as limpiar_noaa
+from src.silver.reporte_calidad import _reglas_para_conjunto
 from src.silver.xm import HORAS, limpiar_horario, separar_recursos
 
 
@@ -52,6 +53,31 @@ def test_enerandes_lee_mes_anio_y_fecha_dia_mes_anio():
     assert tabla_2026.loc[0, "periodo"] == "2026-03"
 
 
+def test_enerandes_mide_normalizacion_de_fechas_energia_y_municipios():
+    encabezados = [
+        "PERIODO", "MUNICIPIO", "SEGMENTO CLIENTE", "MODALIDAD",
+        "ENERGIA", "UNIDAD", "VALOR ($)", "NUM CLIENTES",
+    ]
+    filas = [
+        ["mar-24", "Medellín", "Comercial", "Bolsa", "1.25", "MWh", "2000", "2"],
+        ["03/2024", "ITAGUI", "Comercial", "Bolsa", "100", "kWh", "200", "2"],
+        ["2024-03", "Rionegro (Ant)", "Comercial", "Contrato", "20", "kWh", "200", "3"],
+        ["2024-04", "Bello", "Comercial", "Bolsa", "2", "megawatthora", "200", "2"],
+    ]
+
+    tabla, _, metricas = limpiar_enerandes(ventas_ejemplo(encabezados, filas), 2024)
+
+    por_problema = {metrica["problema"]: metrica for metrica in metricas}
+    assert por_problema["Fechas sin normalizar"]["antes"] == 2
+    assert por_problema["Fechas sin normalizar"]["despues"] == 0
+    assert por_problema["Energía sin normalizar a kWh"]["antes"] == 2
+    assert por_problema["Energía sin normalizar a kWh"]["despues"] == 0
+    assert por_problema["Municipios con grafía no normalizada"]["antes"] == 2
+    assert por_problema["Municipios con grafía no normalizada"]["despues"] == 0
+    assert tabla.loc[0, "energia_kwh"] == 1250
+    assert tabla.loc[3, "energia_kwh"] == 2000
+
+
 def test_noaa_asigna_mes_central_y_fase_en_los_umbral():
     bronce = pd.DataFrame(
         {
@@ -75,6 +101,19 @@ def test_xm_convierte_24_horas_en_filas_numericas():
     assert tabla["hora"].tolist() == list(range(1, 25))
     assert tabla["valor"].tolist() == [float(i) for i in range(1, 25)]
     assert pd.api.types.is_numeric_dtype(tabla["valor"])
+
+
+def test_reporte_mide_expansion_de_filas_horarias_xm():
+    fila = {"Date": "2026-03-01", "Id": "Sistema", "code": "Sistema"}
+    fila.update({hora: str(indice) for indice, hora in enumerate(HORAS, start=1)})
+    bronce = pd.DataFrame([fila])
+    plata = limpiar_horario(bronce)
+
+    metricas = _reglas_para_conjunto(bronce, plata, "xm_precio_bolsa")
+
+    assert metricas[0]["regla"] == "Filas: formato ancho (24 horas) a formato largo"
+    assert metricas[0]["antes"] == 1
+    assert metricas[0]["despues"] == 24
 
 
 def test_xm_envia_todos_los_codigos_de_recurso_conflictivos_a_cuarentena():

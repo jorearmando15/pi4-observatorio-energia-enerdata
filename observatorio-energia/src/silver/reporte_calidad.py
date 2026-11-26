@@ -130,6 +130,8 @@ def _reglas_xm_horario(bronce: pd.DataFrame, plata: pd.DataFrame) -> list[dict]:
         plata, ["valor"], permitir_vacios=True, minimo=0
     )
     return [
+        _regla("Filas: formato ancho (24 horas) a formato largo",
+               len(bronce), len(plata)),
         _regla("Fecha interpretable", _fechas_invalidas(bronce, "Date"),
                _fechas_invalidas(plata, "fecha")),
         _regla("Identificador no vacío", _vacios(bronce, ["Id"]),
@@ -387,16 +389,17 @@ def generar_reporte() -> None:
     filas.extend([
         "## Reglas y métricas antes/después",
         "",
-        "Los valores de las columnas antes/después son filas que incumplen la regla. "
-        "En transformaciones que amplían el grano (por ejemplo, 24 horas por registro), "
-        "se cuentan las filas del grano propio de cada capa.",
+        "Las métricas de validación cuentan filas que incumplen la regla; las métricas "
+        "de transformación cuentan filas de entrada y salida. En transformaciones que "
+        "amplían el grano (por ejemplo, 24 horas por registro), se cuentan las filas "
+        "del grano propio de cada capa.",
         "",
     ])
     for fuente in CONJUNTOS_POR_FUENTE:
         filas.extend([
             f"### {fuente}",
             "",
-            "| Conjunto | Regla | Incumplen antes | Incumplen después | En cuarentena |",
+            "| Conjunto | Métrica | Antes | Después | En cuarentena |",
             "|---|---|---:|---:|---:|",
         ])
         reglas = reglas_por_fuente.get(fuente, [])

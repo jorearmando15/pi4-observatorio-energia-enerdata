@@ -73,6 +73,9 @@ TIPOS_COMPRA = {
     "contrato": "Contrato",
     "contratos": "Contrato",
 }
+UNIDADES_MWH = {"mwh", "megawatthour", "megawatthora"}
+UNIDADES_KWH = {"kwh", "kilowatthour", "kilowatthora"}
+UNIDADES_ENERGIA = UNIDADES_MWH | UNIDADES_KWH
 MESES = {
     "jan": 1, "ene": 1, "january": 1, "enero": 1,
     "feb": 2, "february": 2, "febrero": 2,
@@ -210,12 +213,37 @@ def limpiar(
     columnas = [nombres[i] for i in nombres]
     filas = filas.iloc[:, :len(columnas)]
     filas.columns = columnas
+    filas_originales = filas.copy()
     duplicados_exactos = len(filas) - len(filas.drop_duplicates())
     filas = filas.drop_duplicates()
 
     limpias = []
     cuarentena = []
     totales = 0
+    fechas_normalizadas = 0
+    energia_mwh = 0
+    municipios_normalizados = 0
+    for _, fila in filas_originales.iterrows():
+        if fila.isna().all() or all(str(v).strip() == "" for v in fila.dropna()):
+            continue
+        token_periodo = _token(fila.get("periodo"))
+        if token_periodo in {"total", "totales", "totalgeneral", "periodo"}:
+            continue
+        periodo = _periodo(fila.get("periodo"), anio)
+        if periodo is not None and str(fila.get("periodo")).strip() != periodo:
+            fechas_normalizadas += 1
+        municipio_original = fila.get("municipio")
+        clave = clave_municipio(municipio_original)
+        if (
+            clave is not None
+            and str(municipio_original).strip() != MUNICIPIOS[clave][1]
+        ):
+            municipios_normalizados += 1
+        unidad_raw = fila.get("unidad")
+        unidad = _token(unidad_raw) if pd.notna(unidad_raw) else ""
+        if unidad in UNIDADES_MWH:
+            energia_mwh += 1
+
     for indice, fila in filas.iterrows():
         if fila.isna().all() or all(str(v).strip() == "" for v in fila.dropna()):
             continue
@@ -237,9 +265,9 @@ def limpiar(
         energia = _numero(fila.get("energia"))
         razones_unidad_vacia = False
         if unidad:
-            if unidad in {"mwh", "megawatthour", "megawattshora"}:
+            if unidad in UNIDADES_MWH:
                 energia = energia * 1000 if energia is not None else None
-            elif unidad not in {"kwh", "kilowatthour", "kilowatthora"}:
+            elif unidad not in UNIDADES_KWH:
                 energia = None
         elif "unidad" in filas.columns:
             razones_unidad_vacia = True
@@ -262,7 +290,7 @@ def limpiar(
             razones.append("energía negativa")
         if razones_unidad_vacia:
             razones.append("unidad de energía vacía")
-        if unidad and unidad not in {"mwh", "megawatthour", "megawattshora", "kwh", "kilowatthour", "kilowatthora"}:
+        if unidad and unidad not in UNIDADES_ENERGIA:
             razones.append("unidad de energía desconocida")
         if valor is not None and valor < 0:
             razones.append("valor facturado negativo")
@@ -325,6 +353,30 @@ def limpiar(
         {"problema": "Filas de encabezado", "regla aplicada": "Detectar encabezado por nombres", "antes": 1, "despues": 0},
         {"problema": "Filas de totales", "regla aplicada": "Excluir totales, no ventas", "antes": totales, "despues": 0},
         {"problema": "Filas duplicadas", "regla aplicada": "Conservar una fila por llave", "antes": duplicados_exactos + duplicados_llave, "despues": 0},
+        {
+            "problema": "Fechas sin normalizar",
+            "regla aplicada": "Convertir formatos mixtos a AAAA-MM",
+            "antes": fechas_normalizadas,
+            "despues": int(
+                (~resultado["periodo"].astype("string").str.fullmatch(
+                    r"\d{4}-(0[1-9]|1[0-2])"
+                )).sum()
+            ),
+        },
+        {
+            "problema": "Energía sin normalizar a kWh",
+            "regla aplicada": "Convertir MWh a kWh (MWh × 1.000)",
+            "antes": energia_mwh,
+            "despues": 0,
+        },
+        {
+            "problema": "Municipios con grafía no normalizada",
+            "regla aplicada": "Aplicar catálogo municipal y código DIVIPOLA",
+            "antes": municipios_normalizados,
+            "despues": int((~resultado["municipio"].isin(
+                [municipio[1] for municipio in MUNICIPIOS.values()]
+            )).sum()),
+        },
         {"problema": "Filas en cuarentena", "regla aplicada": "Conservar las filas no corregibles", "antes": len(cuarentena_df), "despues": len(cuarentena_df)},
     ]
     return resultado, cuarentena_df, metricas

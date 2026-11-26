@@ -45,41 +45,56 @@ Reporte generado por `python -m src.silver.pipeline` a partir de los Parquet de 
 
 ## Reglas y métricas antes/después
 
-Los valores de las columnas antes/después son filas que incumplen la regla. En transformaciones que amplían el grano (por ejemplo, 24 horas por registro), se cuentan las filas del grano propio de cada capa.
+Las métricas de validación cuentan filas que incumplen la regla; las métricas de transformación cuentan filas de entrada y salida. En transformaciones que amplían el grano (por ejemplo, 24 horas por registro), se cuentan las filas del grano propio de cada capa.
 
 ### EnerAndes
 
-| Conjunto | Regla | Incumplen antes | Incumplen después | En cuarentena |
+| Conjunto | Métrica | Antes | Después | En cuarentena |
 |---|---|---:|---:|---:|
 | `enerandes_ventas_2023` | Filas de encabezado: Detectar encabezado por nombres | 1 | 0 | 0 |
 | `enerandes_ventas_2023` | Filas de totales: Excluir totales, no ventas | 1 | 0 | 0 |
 | `enerandes_ventas_2023` | Filas duplicadas: Conservar una fila por llave | 32 | 0 | 0 |
+| `enerandes_ventas_2023` | Fechas sin normalizar: Convertir formatos mixtos a AAAA-MM | 0 | 0 | 0 |
+| `enerandes_ventas_2023` | Energía sin normalizar a kWh: Convertir MWh a kWh (MWh × 1.000) | 0 | 0 | 0 |
+| `enerandes_ventas_2023` | Municipios con grafía no normalizada: Aplicar catálogo municipal y código DIVIPOLA | 62 | 0 | 0 |
 | `enerandes_ventas_2023` | Filas en cuarentena: Conservar las filas no corregibles | 16 | 16 | 16 |
 | `enerandes_ventas_2024` | Filas de encabezado: Detectar encabezado por nombres | 1 | 0 | 0 |
 | `enerandes_ventas_2024` | Filas de totales: Excluir totales, no ventas | 1 | 0 | 0 |
 | `enerandes_ventas_2024` | Filas duplicadas: Conservar una fila por llave | 32 | 0 | 0 |
+| `enerandes_ventas_2024` | Fechas sin normalizar: Convertir formatos mixtos a AAAA-MM | 758 | 0 | 0 |
+| `enerandes_ventas_2024` | Energía sin normalizar a kWh: Convertir MWh a kWh (MWh × 1.000) | 347 | 0 | 0 |
+| `enerandes_ventas_2024` | Municipios con grafía no normalizada: Aplicar catálogo municipal y código DIVIPOLA | 71 | 0 | 0 |
 | `enerandes_ventas_2024` | Filas en cuarentena: Conservar las filas no corregibles | 9 | 9 | 9 |
 | `enerandes_ventas_2025` | Filas de encabezado: Detectar encabezado por nombres | 1 | 0 | 0 |
 | `enerandes_ventas_2025` | Filas de totales: Excluir totales, no ventas | 1 | 0 | 0 |
 | `enerandes_ventas_2025` | Filas duplicadas: Conservar una fila por llave | 32 | 0 | 0 |
+| `enerandes_ventas_2025` | Fechas sin normalizar: Convertir formatos mixtos a AAAA-MM | 1112 | 0 | 0 |
+| `enerandes_ventas_2025` | Energía sin normalizar a kWh: Convertir MWh a kWh (MWh × 1.000) | 0 | 0 | 0 |
+| `enerandes_ventas_2025` | Municipios con grafía no normalizada: Aplicar catálogo municipal y código DIVIPOLA | 65 | 0 | 0 |
 | `enerandes_ventas_2025` | Filas en cuarentena: Conservar las filas no corregibles | 9 | 9 | 9 |
 | `enerandes_ventas_2026` | Filas de encabezado: Detectar encabezado por nombres | 1 | 0 | 0 |
 | `enerandes_ventas_2026` | Filas de totales: Excluir totales, no ventas | 1 | 0 | 0 |
 | `enerandes_ventas_2026` | Filas duplicadas: Conservar una fila por llave | 24 | 0 | 0 |
+| `enerandes_ventas_2026` | Fechas sin normalizar: Convertir formatos mixtos a AAAA-MM | 834 | 0 | 0 |
+| `enerandes_ventas_2026` | Energía sin normalizar a kWh: Convertir MWh a kWh (MWh × 1.000) | 0 | 0 | 0 |
+| `enerandes_ventas_2026` | Municipios con grafía no normalizada: Aplicar catálogo municipal y código DIVIPOLA | 53 | 0 | 0 |
 | `enerandes_ventas_2026` | Filas en cuarentena: Conservar las filas no corregibles | 9 | 9 | 9 |
 
 ### XM
 
-| Conjunto | Regla | Incumplen antes | Incumplen después | En cuarentena |
+| Conjunto | Métrica | Antes | Después | En cuarentena |
 |---|---|---:|---:|---:|
+| `xm_precio_bolsa` | Filas: formato ancho (24 horas) a formato largo | 1004 | 24096 | 0 |
 | `xm_precio_bolsa` | Fecha interpretable | 0 | 0 | 0 |
 | `xm_precio_bolsa` | Identificador no vacío | 0 | 0 | 0 |
 | `xm_precio_bolsa` | Valores horarios numéricos y no negativos | 0 | 0 | 0 |
 | `xm_precio_bolsa` | Clave fecha/hora/identificador única | 0 | 0 | 0 |
+| `xm_demanda` | Filas: formato ancho (24 horas) a formato largo | 1004 | 24096 | 0 |
 | `xm_demanda` | Fecha interpretable | 0 | 0 | 0 |
 | `xm_demanda` | Identificador no vacío | 0 | 0 | 0 |
 | `xm_demanda` | Valores horarios numéricos y no negativos | 0 | 0 | 0 |
 | `xm_demanda` | Clave fecha/hora/identificador única | 0 | 0 | 0 |
+| `xm_generacion` | Filas: formato ancho (24 horas) a formato largo | 350361 | 8408664 | 0 |
 | `xm_generacion` | Fecha interpretable | 0 | 0 | 0 |
 | `xm_generacion` | Identificador no vacío | 0 | 0 | 0 |
 | `xm_generacion` | Valores horarios numéricos y no negativos | 0 | 0 | 0 |
@@ -98,7 +113,7 @@ Los valores de las columnas antes/después son filas que incumplen la regla. En 
 
 ### IDEAM
 
-| Conjunto | Regla | Incumplen antes | Incumplen después | En cuarentena |
+| Conjunto | Métrica | Antes | Después | En cuarentena |
 |---|---|---:|---:|---:|
 | `ideam_precipitacion_diaria` | Estación y municipio no vacíos | 0 | 0 | 0 |
 | `ideam_precipitacion_diaria` | Fecha interpretable | 0 | 0 | 0 |
@@ -117,7 +132,7 @@ Los valores de las columnas antes/después son filas que incumplen la regla. En 
 
 ### NOAA
 
-| Conjunto | Regla | Incumplen antes | Incumplen después | En cuarentena |
+| Conjunto | Métrica | Antes | Después | En cuarentena |
 |---|---|---:|---:|---:|
 | `noaa_oni` | Temporada ONI reconocida | 0 | 0 | 0 |
 | `noaa_oni` | Año entero | 0 | 0 | 0 |
@@ -127,7 +142,7 @@ Los valores de las columnas antes/después son filas que incumplen la regla. En 
 
 ### TRM
 
-| Conjunto | Regla | Incumplen antes | Incumplen después | En cuarentena |
+| Conjunto | Métrica | Antes | Después | En cuarentena |
 |---|---|---:|---:|---:|
 | `trm_diaria` | Fechas de vigencia interpretables | 0 | 0 | 0 |
 | `trm_diaria` | Vigencia final igual o posterior a la inicial | 0 | 0 | 0 |

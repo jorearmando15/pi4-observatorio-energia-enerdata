@@ -530,6 +530,9 @@ poder probarlos con pytest sin abrir la página.
 | **5 · Impacto en el negocio** | Costo por contrato vs. bolsa, sobrecosto y concentración del riesgo por municipio y segmento. |
 | **6 · Pregunta propia** | Serie mensual con fases ENSO sombreadas, distribución por fase con puntos y n, dispersión ONI–térmica con recta de tendencia y R², tabla mensual y conclusión con advertencias. |
 
+### Enlace al tablero desplegado
+[Ver tablero interactivo en Streamlit](https://observatorio-energia-enerdata.streamlit.app/)
+
 ### Capturas del dashboard
 
 | # | Pestaña | Archivo esperado |
@@ -567,6 +570,12 @@ poder probarlos con pytest sin abrir la página.
 ![Pestaña 6 · Pregunta propia](docs/img/dashboard_06_pregunta_propia.png)
 
 ![Pestaña 6 · Pregunta propia (detalle)](docs/img/dashboard_06_pregunta_propia_01.png)
+
+#### WorkFlow GitHub
+![WorkFlow GitHub](docs/img/workflow_github.png)
+
+## 📄 Informe final `docs/informe_final.pdf`
+[Ver informe completo](docs/informe_final.pdf)
 
 ## 🔎 Hallazgos principales (EA3)
 
